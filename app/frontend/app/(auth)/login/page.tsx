@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import * as React from "react";
+import { FormEvent } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,14 +19,11 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-export default function LoginPage({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+export default function LoginPage() {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,6 +49,7 @@ export default function LoginPage({
           Enter your email below to login to your account
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
@@ -57,7 +57,7 @@ export default function LoginPage({
               <FieldLabel htmlFor="email">Email</FieldLabel>
               <Input
                 id="email"
-                type="text"
+                type="email"
                 placeholder="m@example.com"
                 required
                 value={email}
@@ -66,9 +66,7 @@ export default function LoginPage({
             </Field>
 
             <Field>
-              <div className="flex items-center">
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-              </div>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
               <Input
                 id="password"
                 type="password"
