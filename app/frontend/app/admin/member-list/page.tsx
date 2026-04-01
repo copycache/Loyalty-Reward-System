@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { EllipsisVertical, Search, Plus } from "lucide-react";
+import { Search, Plus, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +17,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -65,6 +67,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 export default function MemberListPage() {
   const [users, setUsers] = useState([
@@ -826,6 +836,14 @@ export default function MemberListPage() {
     },
   ]);
 
+  const frameworks = [
+    "Next.js",
+    "SvelteKit",
+    "Nuxt.js",
+    "Remix",
+    "Astro",
+  ] as const;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [search, setSearch] = useState("");
@@ -834,7 +852,6 @@ export default function MemberListPage() {
   const [openPlaceSlot, setOpenPlaceSlot] = useState(false);
   const [openCreateSlot, setOpenCreateSlot] = useState(false);
   const [openSlotLimit, setOpenSlotLimit] = useState(false);
-  const [openAddUser, setOpenAddUser] = useState(false);
 
   const filteredUsers = useMemo(() => {
     if (!search) return users;
@@ -1156,7 +1173,7 @@ export default function MemberListPage() {
         </div>
       </div>
       <div className="min-h-[100vh] flex-1 rounded-md border md:min-h-min">
-        <Sheet>
+        <Dialog>
           <Table>
             <TableHeader>
               <TableRow>
@@ -1217,7 +1234,7 @@ export default function MemberListPage() {
                     {user.total_earnings}
                   </TableCell>
 
-                  <TableCell className="w-px">
+                  {/* <TableCell className="w-px">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -1227,10 +1244,41 @@ export default function MemberListPage() {
 
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setSelectedUser(user)}>
-                          <SheetTrigger>Edit</SheetTrigger>
+                          <DialogTrigger>View</DialogTrigger>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </TableCell> */}
+
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      {/* View */}
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedUser(user)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="size-4" />
+                          <span>View</span>
+                        </Button>
+                      </DialogTrigger>
+
+                      {/* Delete */}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() =>
+                          setUsers((prev) =>
+                            prev.filter((u) => u.id !== user.id),
+                          )
+                        }
+                        className="flex items-center gap-2"
+                      >
+                        <span>Delete</span>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -1238,75 +1286,318 @@ export default function MemberListPage() {
           </Table>
 
           {selectedUser && (
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Edit User</SheetTitle>
-              </SheetHeader>
+            <DialogContent className="sm:max-w-4xl max-h-sm overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Slot Information</DialogTitle>
+              </DialogHeader>
 
-              <div className="grid gap-4 py-4">
-                <Input
-                  value={selectedUser.full_name}
-                  onChange={(e) =>
-                    setSelectedUser({
-                      ...selectedUser,
-                      full_name: e.target.value,
-                    })
-                  }
-                />
+              {selectedUser && (
+                <Tabs defaultValue="overview" className="w-full h-full">
+                  <TabsList variant="line" className="grid grid-cols-4">
+                    <TabsTrigger value="information">Information</TabsTrigger>
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="reports">Reports</TabsTrigger>
+                    <TabsTrigger value="settings">Settings</TabsTrigger>
+                  </TabsList>
 
-                <Input
-                  value={selectedUser.email}
-                  onChange={(e) =>
-                    setSelectedUser({ ...selectedUser, email: e.target.value })
-                  }
-                />
+                  <TabsContent value="information">
+                    <form>
+                      <div className="text-center py-5">
+                        <DialogTitle>Slot Information</DialogTitle>
+                      </div>
+                      <FieldGroup>
+                        <FieldSet>
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="username">
+                                Username
+                              </FieldLabel>
+                              <Input
+                                id="username"
+                                placeholder="Enter Username"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="slotOwner">
+                                Slot Owner
+                              </FieldLabel>
+                              <Input
+                                id="slotOwner"
+                                placeholder="Administrator"
+                                disabled
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="sponsor">Sponsor</FieldLabel>
+                              <Input id="sponsor" placeholder="--" disabled />
+                            </Field>
+                          </FieldGroup>
 
-                <Input
-                  value={selectedUser.role}
-                  onChange={(e) =>
-                    setSelectedUser({ ...selectedUser, role: e.target.value })
-                  }
-                />
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="membershipPackage">
+                                Membership Package
+                              </FieldLabel>
+                              <Combobox items={frameworks}>
+                                <ComboboxInput placeholder="Membership Package" />
+                                <ComboboxContent>
+                                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                                  <ComboboxList>
+                                    {(item) => (
+                                      <ComboboxItem key={item} value={item}>
+                                        {item}
+                                      </ComboboxItem>
+                                    )}
+                                  </ComboboxList>
+                                </ComboboxContent>
+                              </Combobox>
+                            </Field>
 
-                <Input
-                  value={selectedUser.branch}
-                  onChange={(e) =>
-                    setSelectedUser({ ...selectedUser, branch: e.target.value })
-                  }
-                />
+                            <Field>
+                              <FieldLabel htmlFor="slotOwner">
+                                Slot Owner
+                              </FieldLabel>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="blocked">
+                                    Blocked
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </Field>
 
-                <Select
-                  value={selectedUser.status}
-                  onValueChange={(val) =>
-                    setSelectedUser({ ...selectedUser, status: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
+                            <Field>
+                              <FieldLabel htmlFor="emailStatus">
+                                Email Status
+                              </FieldLabel>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="activated">
+                                    Activated
+                                  </SelectItem>
+                                  <SelectItem value="pending">
+                                    Pending
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </FieldGroup>
 
-                <Button
-                  onClick={() => {
-                    setUsers((prev) =>
-                      prev.map((u) =>
-                        u.id === selectedUser.id ? selectedUser : u,
-                      ),
-                    );
-                    setSelectedUser(null);
-                  }}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </SheetContent>
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="slotOwner">
+                                KYC Status
+                              </FieldLabel>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="noValidID">
+                                    No Valid ID
+                                  </SelectItem>
+                                  <SelectItem value="verified">
+                                    Verified
+                                  </SelectItem>
+                                  <SelectItem value="rejected">
+                                    Rejected
+                                  </SelectItem>
+                                  <SelectItem value="pending">
+                                    Pending
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </Field>
+
+                            <Field>
+                              <FieldLabel htmlFor="storeName">
+                                Store Name
+                              </FieldLabel>
+                              <Input
+                                id="storeName"
+                                placeholder="Enter Store Name"
+                              />
+                            </Field>
+                          </FieldGroup>
+                        </FieldSet>
+                      </FieldGroup>
+
+                      <div className="text-center py-5">
+                        <DialogTitle>Member Information</DialogTitle>
+                      </div>
+                      <FieldGroup>
+                        <FieldSet>
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="firstName">
+                                First Name
+                              </FieldLabel>
+                              <Input
+                                id="firstName"
+                                placeholder="Enter First Name"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="middleName">
+                                Middle Name
+                              </FieldLabel>
+                              <Input
+                                id="middleName"
+                                placeholder="Enter Middle Name"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="lastName">
+                                Last Name
+                              </FieldLabel>
+                              <Input
+                                id="lastName"
+                                placeholder="Enter Last Name"
+                              />
+                            </Field>
+                          </FieldGroup>
+
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="email">Email</FieldLabel>
+                              <Input id="email" placeholder="Enter Email" />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="ContactNumber">
+                                Contact Number
+                              </FieldLabel>
+                              <Input
+                                id="ContactNumber"
+                                placeholder="Enter Contact Number"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="countryCurrency">
+                                Country/Currency
+                              </FieldLabel>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="philippines">
+                                    Philippines (PHP)
+                                  </SelectItem>
+                                  <SelectItem value="japan">
+                                    Japan (JPY)
+                                  </SelectItem>
+                                  <SelectItem value="usa">
+                                    USA (USD)
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </FieldGroup>
+                        </FieldSet>
+                      </FieldGroup>
+
+                      <div className="text-center py-5">
+                        <DialogTitle>Beneficiary Information</DialogTitle>
+                      </div>
+                      <FieldGroup>
+                        <FieldSet>
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="beneficiaryFirstName">
+                                Beneficiary First Name
+                              </FieldLabel>
+                              <Input
+                                id="beneficiaryFirstName"
+                                placeholder="Enter First Name"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="beneficiaryMiddleName">
+                                Beneficiary Middle Name
+                              </FieldLabel>
+                              <Input
+                                id="beneficiaryMiddleName"
+                                placeholder="Enter Middle Name"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="beneficiaryLastName">
+                                Beneficiary Last Name
+                              </FieldLabel>
+                              <Input
+                                id="beneficiaryLastName"
+                                placeholder="Enter Last Name"
+                              />
+                            </Field>
+                          </FieldGroup>
+
+                          <FieldGroup className="grid grid-cols-3">
+                            <Field>
+                              <FieldLabel htmlFor="contactNumber">Contact Number</FieldLabel>
+                              <Input id="contactNumber" placeholder="Enter Contact Number" />
+                            </Field>
+                          </FieldGroup>
+                        </FieldSet>
+                      </FieldGroup>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="details">
+                    <form>
+                      <div className="text-center py-5">
+                        <DialogTitle>Slot Details</DialogTitle>
+                      </div>
+
+                      <div className="text-center py-5">
+                        <DialogTitle>Member Details</DialogTitle>
+                      </div>
+
+                      <div className="text-center py-5">
+                        <DialogTitle>Member's Valid ID</DialogTitle>
+                      </div>
+                      
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="reports">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Reports</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-sm text-muted-foreground">
+                        (Add reports here)
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="settings">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-sm text-muted-foreground">
+                        (Add settings form here)
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              )}
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button>Update Slot Information</Button>
+              </DialogFooter>
+            </DialogContent>
           )}
-        </Sheet>
+        </Dialog>
       </div>
       <div className="flex justify-between">
         <div className="flex items-center gap-2">
