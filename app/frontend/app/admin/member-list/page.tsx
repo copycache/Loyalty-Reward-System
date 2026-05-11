@@ -75,6 +75,11 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { PlaceSlotContent } from "@/components/member-list/place-slot";
+import { CreateSlotContent } from "@/components/member-list/create-slot";
+import { SlotLimitMemberContent } from "@/components/member-list/slot-limit-member";
+import { AddUserContent } from "@/components/member-list/add-user";
+import { ViewContent } from "@/components/member-list/view";
 
 export default function MemberListPage() {
   const [users, setUsers] = useState([
@@ -842,7 +847,7 @@ export default function MemberListPage() {
     "Nuxt.js",
     "Remix",
     "Astro",
-  ] as const;
+  ];
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -907,54 +912,7 @@ export default function MemberListPage() {
               </Button>
             </SheetTrigger>
             <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Place Slot</SheetTitle>
-              </SheetHeader>
-
-              <div className="no-scrollbar overflow-y-auto px-4">
-                <form>
-                  <FieldGroup>
-                    <FieldSet>
-                      <FieldGroup>
-                        <Field>
-                          <Label htmlFor="username">Username</Label>
-                          <Input
-                            id="username"
-                            placeholder="Enter Owners Username"
-                          />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="placement">Placement</Label>
-                          <Input id="placement" placeholder="Placement" />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="position">Position</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Position" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="LEFT">LEFT</SelectItem>
-                              <SelectItem value="RIGHT">RIGHT</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      </FieldGroup>
-                    </FieldSet>
-                  </FieldGroup>
-                </form>
-                <SheetFooter>
-                  <Button onClick={() => setOpenPlaceSlot(false)}>
-                    Place Slot
-                  </Button>
-                  <Button variant="outline" type="submit">
-                    Auto Position
-                  </Button>
-                  <SheetClose asChild>
-                    <Button variant="destructive">Cancel</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </div>
+              <PlaceSlotContent onClose={() => setOpenPlaceSlot(false)} />
             </SheetContent>
           </Sheet>
 
@@ -966,53 +924,7 @@ export default function MemberListPage() {
               </Button>
             </SheetTrigger>
             <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Create Slot</SheetTitle>
-              </SheetHeader>
-
-              <div className="no-scrollbar overflow-y-auto px-4">
-                <form>
-                  <FieldGroup>
-                    <FieldSet>
-                      <FieldGroup>
-                        <Field>
-                          <Label htmlFor="code">Code</Label>
-                          <Input id="code" placeholder="Enter Code" />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="pin">Pin</Label>
-                          <Input id="pin" placeholder="Enter Pin" />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="slotOwner">Slot Owner</Label>
-                          <Input
-                            id="slotOwner"
-                            placeholder="Enter Owner Name"
-                          />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="sponsor">Sponsor</Label>
-                          <Input
-                            id="sponsor"
-                            placeholder="Enter Sponsor (Username)"
-                          />
-                        </Field>
-                      </FieldGroup>
-                    </FieldSet>
-                  </FieldGroup>
-                </form>
-                <SheetFooter>
-                  <Button onClick={() => setOpenCreateSlot(false)}>
-                    Create Slot
-                  </Button>
-                  <Button variant="outline" type="submit">
-                    Get Code
-                  </Button>
-                  <SheetClose asChild>
-                    <Button variant="destructive">Cancel</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </div>
+              <CreateSlotContent onClose={() => setOpenCreateSlot(false)} />
             </SheetContent>
           </Sheet>
 
@@ -1024,51 +936,11 @@ export default function MemberListPage() {
               </Button>
             </SheetTrigger>
             <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Slot Limit/Member</SheetTitle>
-              </SheetHeader>
-
-              <div className="no-scrollbar overflow-y-auto px-4">
-                <form>
-                  <FieldGroup>
-                    <FieldSet>
-                      <FieldGroup>
-                        <Field>
-                          <div className="flex gap-2">
-                            <Checkbox id="terms" />
-                            <Label htmlFor="terms">Update All Slot</Label>
-                          </div>
-                        </Field>
-                        <Field>
-                          <Label htmlFor="slotOwner">Slot Owner</Label>
-                          <Input
-                            id="slotOwner"
-                            placeholder="Enter Owner Name"
-                          />
-                        </Field>
-                        <Field>
-                          <Label htmlFor="slotLimit">Slot Limit</Label>
-                          <Input id="slotLimit" type="number" />
-                        </Field>
-                      </FieldGroup>
-                    </FieldSet>
-                  </FieldGroup>
-                </form>
-                <SheetFooter>
-                  <Button onClick={() => setOpenSlotLimit(false)}>
-                    Submit
-                  </Button>
-                  <Button variant="outline" type="submit">
-                    Auto Position
-                  </Button>
-                  <SheetClose asChild>
-                    <Button variant="destructive">Cancel</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </div>
+              <SlotLimitMemberContent onClose={() => setOpenSlotLimit(false)} />
             </SheetContent>
           </Sheet>
 
+          {/* Add User */}
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="default" size="sm">
@@ -1077,102 +949,14 @@ export default function MemberListPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add New Member</DialogTitle>
-                <DialogDescription>
-                  Enter the details for the new member.
-                </DialogDescription>
-              </DialogHeader>
-              <form>
-                <FieldGroup>
-                  <FieldSet>
-                    <FieldGroup>
-                      <Field>
-                        <Label htmlFor="slotSponsorUsername">
-                          Slot Sponsor Username
-                        </Label>
-                        <Input
-                          id="slotSponsorUsername"
-                          placeholder="Enter Sponsor Username"
-                        />
-                      </Field>
-                      <Field>
-                        <Label htmlFor="username">Username</Label>
-                        <Input id="username" placeholder="Enter Username" />
-                      </Field>
-                      <Field>
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" placeholder="Enter Email Address" />
-                      </Field>
-                      <FieldGroup className="grid grid-cols-3">
-                        <Field>
-                          <FieldLabel htmlFor="firstName">
-                            First Name
-                          </FieldLabel>
-                          <Input
-                            id="firstName"
-                            placeholder="Enter First Name"
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="mid">Middle Name</FieldLabel>
-                          <Input id="mid" placeholder="Enter Middle Name" />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                          <Input id="lastName" placeholder="Enter Last Name" />
-                        </Field>
-                      </FieldGroup>
-
-                      <Field>
-                        <Label htmlFor="contactNumber">Contact Number</Label>
-                        <Input
-                          id="contactNumber"
-                          type="tel"
-                          placeholder="+63 (123) 123-4567"
-                        />
-                      </Field>
-
-                      <Field>
-                        <Label htmlFor="countryCurrency">
-                          Country / Currency
-                        </Label>
-                        <Select>
-                          <SelectTrigger id="countryCurrency">
-                            <SelectValue placeholder="countryCurrency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="philippines">
-                              Philippines
-                            </SelectItem>
-                            <SelectItem value="japan">Japan</SelectItem>
-                            <SelectItem value="usa">USA</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
-                        <Input
-                          id="password"
-                          type="password"
-                          placeholder="Enter Password"
-                        />
-                      </Field>
-                    </FieldGroup>
-                  </FieldSet>
-                </FieldGroup>
-              </form>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Close</Button>
-                </DialogClose>
-                <Button>Submit</Button>
-              </DialogFooter>
+              <AddUserContent />
             </DialogContent>
           </Dialog>
         </div>
       </div>
       <div className="min-h-[100vh] flex-1 rounded-md border md:min-h-min">
+
+        {/* Slot Table */}
         <Dialog>
           <Table>
             <TableHeader>
@@ -1285,318 +1069,7 @@ export default function MemberListPage() {
             </TableBody>
           </Table>
 
-          {selectedUser && (
-            <DialogContent className="sm:max-w-4xl max-h-sm overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Slot Information</DialogTitle>
-              </DialogHeader>
-
-              {selectedUser && (
-                <Tabs defaultValue="overview" className="w-full h-full">
-                  <TabsList variant="line" className="grid grid-cols-4">
-                    <TabsTrigger value="information">Information</TabsTrigger>
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="reports">Reports</TabsTrigger>
-                    <TabsTrigger value="settings">Settings</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="information">
-                    <form>
-                      <div className="text-center py-5">
-                        <DialogTitle>Slot Information</DialogTitle>
-                      </div>
-                      <FieldGroup>
-                        <FieldSet>
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="username">
-                                Username
-                              </FieldLabel>
-                              <Input
-                                id="username"
-                                placeholder="Enter Username"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="slotOwner">
-                                Slot Owner
-                              </FieldLabel>
-                              <Input
-                                id="slotOwner"
-                                placeholder="Administrator"
-                                disabled
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="sponsor">Sponsor</FieldLabel>
-                              <Input id="sponsor" placeholder="--" disabled />
-                            </Field>
-                          </FieldGroup>
-
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="membershipPackage">
-                                Membership Package
-                              </FieldLabel>
-                              <Combobox items={frameworks}>
-                                <ComboboxInput placeholder="Membership Package" />
-                                <ComboboxContent>
-                                  <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                  <ComboboxList>
-                                    {(item) => (
-                                      <ComboboxItem key={item} value={item}>
-                                        {item}
-                                      </ComboboxItem>
-                                    )}
-                                  </ComboboxList>
-                                </ComboboxContent>
-                              </Combobox>
-                            </Field>
-
-                            <Field>
-                              <FieldLabel htmlFor="slotOwner">
-                                Slot Owner
-                              </FieldLabel>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">Active</SelectItem>
-                                  <SelectItem value="blocked">
-                                    Blocked
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </Field>
-
-                            <Field>
-                              <FieldLabel htmlFor="emailStatus">
-                                Email Status
-                              </FieldLabel>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="activated">
-                                    Activated
-                                  </SelectItem>
-                                  <SelectItem value="pending">
-                                    Pending
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </Field>
-                          </FieldGroup>
-
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="slotOwner">
-                                KYC Status
-                              </FieldLabel>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="noValidID">
-                                    No Valid ID
-                                  </SelectItem>
-                                  <SelectItem value="verified">
-                                    Verified
-                                  </SelectItem>
-                                  <SelectItem value="rejected">
-                                    Rejected
-                                  </SelectItem>
-                                  <SelectItem value="pending">
-                                    Pending
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </Field>
-
-                            <Field>
-                              <FieldLabel htmlFor="storeName">
-                                Store Name
-                              </FieldLabel>
-                              <Input
-                                id="storeName"
-                                placeholder="Enter Store Name"
-                              />
-                            </Field>
-                          </FieldGroup>
-                        </FieldSet>
-                      </FieldGroup>
-
-                      <div className="text-center py-5">
-                        <DialogTitle>Member Information</DialogTitle>
-                      </div>
-                      <FieldGroup>
-                        <FieldSet>
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="firstName">
-                                First Name
-                              </FieldLabel>
-                              <Input
-                                id="firstName"
-                                placeholder="Enter First Name"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="middleName">
-                                Middle Name
-                              </FieldLabel>
-                              <Input
-                                id="middleName"
-                                placeholder="Enter Middle Name"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="lastName">
-                                Last Name
-                              </FieldLabel>
-                              <Input
-                                id="lastName"
-                                placeholder="Enter Last Name"
-                              />
-                            </Field>
-                          </FieldGroup>
-
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="email">Email</FieldLabel>
-                              <Input id="email" placeholder="Enter Email" />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="ContactNumber">
-                                Contact Number
-                              </FieldLabel>
-                              <Input
-                                id="ContactNumber"
-                                placeholder="Enter Contact Number"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="countryCurrency">
-                                Country/Currency
-                              </FieldLabel>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="philippines">
-                                    Philippines (PHP)
-                                  </SelectItem>
-                                  <SelectItem value="japan">
-                                    Japan (JPY)
-                                  </SelectItem>
-                                  <SelectItem value="usa">
-                                    USA (USD)
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </Field>
-                          </FieldGroup>
-                        </FieldSet>
-                      </FieldGroup>
-
-                      <div className="text-center py-5">
-                        <DialogTitle>Beneficiary Information</DialogTitle>
-                      </div>
-                      <FieldGroup>
-                        <FieldSet>
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="beneficiaryFirstName">
-                                Beneficiary First Name
-                              </FieldLabel>
-                              <Input
-                                id="beneficiaryFirstName"
-                                placeholder="Enter First Name"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="beneficiaryMiddleName">
-                                Beneficiary Middle Name
-                              </FieldLabel>
-                              <Input
-                                id="beneficiaryMiddleName"
-                                placeholder="Enter Middle Name"
-                              />
-                            </Field>
-                            <Field>
-                              <FieldLabel htmlFor="beneficiaryLastName">
-                                Beneficiary Last Name
-                              </FieldLabel>
-                              <Input
-                                id="beneficiaryLastName"
-                                placeholder="Enter Last Name"
-                              />
-                            </Field>
-                          </FieldGroup>
-
-                          <FieldGroup className="grid grid-cols-3">
-                            <Field>
-                              <FieldLabel htmlFor="contactNumber">Contact Number</FieldLabel>
-                              <Input id="contactNumber" placeholder="Enter Contact Number" />
-                            </Field>
-                          </FieldGroup>
-                        </FieldSet>
-                      </FieldGroup>
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="details">
-                    <form>
-                      <div className="text-center py-5">
-                        <DialogTitle>Slot Details</DialogTitle>
-                      </div>
-
-                      <div className="text-center py-5">
-                        <DialogTitle>Member Details</DialogTitle>
-                      </div>
-
-                      <div className="text-center py-5">
-                        <DialogTitle>Member's Valid ID</DialogTitle>
-                      </div>
-                      
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="reports">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Reports</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-sm text-muted-foreground">
-                        (Add reports here)
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="settings">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Settings</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-sm text-muted-foreground">
-                        (Add settings form here)
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              )}
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button>Update Slot Information</Button>
-              </DialogFooter>
-            </DialogContent>
-          )}
+          {selectedUser && <ViewContent selectedUser={selectedUser} frameworks={frameworks} />}
         </Dialog>
       </div>
       <div className="flex justify-between">
