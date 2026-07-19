@@ -9,9 +9,11 @@ class VerifyCsrfToken extends Middleware
     /**
      * The URIs that should be excluded from CSRF verification.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $except = [
-        //
+    	'/open_import_slots',
+        '/payment/dragonpay/postback',
+    	'/payment/dragonpay/return',
     ];
 }

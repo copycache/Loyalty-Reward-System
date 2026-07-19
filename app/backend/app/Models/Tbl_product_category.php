@@ -1,0 +1,17 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Tbl_product_category extends Model
+{
+    use HasFactory;
+
+	protected $table = 'tbl_product_category';
+
+	protected $primaryKey = "id";
+
+	protected $guarded = [];
+    public $timestamps = false;
+}
