@@ -75,11 +75,11 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { PlaceSlotContent } from "@/components/member-list/place-slot";
-import { CreateSlotContent } from "@/components/member-list/create-slot";
-import { SlotLimitMemberContent } from "@/components/member-list/slot-limit-member";
-import { AddUserContent } from "@/components/member-list/add-user";
-import { ViewContent } from "@/components/member-list/view";
+import { PlaceSlotContent } from "@/components/page/member-list/place-slot";
+import { CreateSlotContent } from "@/components/page/member-list/create-slot";
+import { SlotLimitMemberContent } from "@/components/page/member-list/slot-limit-member";
+import { AddUserContent } from "@/components/page/member-list/add-user";
+import { ViewContent } from "@/components/page/member-list/view";
 
 export default function MemberListPage() {
   const [users, setUsers] = useState([
