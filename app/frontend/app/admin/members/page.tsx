@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import MembersTable from "@/components/page/member-list/table";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { apiPost } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Search,
-  Plus,
   Eye,
   ChevronLeft,
   ChevronRight,
@@ -43,13 +43,10 @@ import {
   Wallet,
   Users,
   Network,
-  FileText,
-  Award,
-  ArrowUpDown,
   Shield,
 } from "lucide-react";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// --- Types ---
 
 interface SlotData {
   slot_id: number;
@@ -59,15 +56,21 @@ interface SlotData {
   slot_sponsor_no: string;
   slot_placement_no: string;
   membership_name: string;
+  membership_id?: number | string;
   slot_type: string;
-  slot_status: string;
+  slot_status: string; // "0" = pending, "1" = verified, "2" = rejected
   slot_date_created: string;
   slot_date_placed_new: string;
   wallet: string | number;
   earning: string | number;
   cashin: string | number;
   voucher_wallet: string | number;
-  [key: string]: any;
+}
+
+interface MembersResponse {
+  data?: SlotData[];
+  last_page?: number;
+  total?: number;
 }
 
 interface Filters {
@@ -76,128 +79,259 @@ interface Filters {
   kyc_status: string;
 }
 
-interface FilterOptions {
-  membership: { membership_id: number; membership_name: string }[];
+interface MembershipOption {
+  membership_id: number | string;
+  membership_name: string;
+}
+
+interface AddMemberForm {
+  first_name: string;
+  last_name: string;
+  middle_name: string;
+  email: string;
+  contact: string;
+  username: string;
+  password: string;
+  sponsor: string;
+  membership_id: string;
+}
+
+interface AdjustWalletForm {
+  slot_id: string;
+  amount: string;
+  details: string;
+}
+
+// Detail tabs load different data shapes from different endpoints.
+// We keep these loosely typed since they're admin-facing debug/raw data,
+// but named clearly so it's obvious what each one holds.
+type DetailRecord = Record<string, unknown>;
+type EarningRecord = { type?: string; plan_name?: string; amount?: number | string; created_at?: string };
+type WalletRecord = { details?: string; description?: string; amount: number | string; balance?: number | string; created_at?: string };
+type PayoutRecord = { amount?: number | string; method_name?: string; status?: string; created_at?: string };
+type NetworkRecord = { name?: string; slot_id?: number; membership_name?: string; position?: string; status?: string };
+
+type DetailTab = "info" | "details" | "earnings" | "wallet" | "payout" | "network";
+
+const EMPTY_ADD_FORM: AddMemberForm = {
+  first_name: "",
+  last_name: "",
+  middle_name: "",
+  email: "",
+  contact: "",
+  username: "",
+  password: "",
+  sponsor: "",
+  membership_id: "",
+};
+
+const EMPTY_ADJUST_FORM: AdjustWalletForm = { slot_id: "", amount: "", details: "" };
+
+const PAGE_SIZE = 15;
+
+// --- Small reusable pieces ---
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-10">
+      <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
+// KYC status comes back from the API as a number (0/1/2). This maps it
+// to a readable, colored badge.
+function KycBadge({ status }: { status: number }) {
+  if (status === 1) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>;
+  }
+  if (status === 2) {
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
+  }
+  return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
+}
+
+// Renders an object as a grid of "LABEL: value" pairs. Used for the raw
+// "info" and "details" tabs, which return whatever fields the API sends.
+function KeyValueGrid({ data }: { data: DetailRecord }) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {Object.entries(data).map(([key, value]) => (
+        <div key={key} className="space-y-1">
+          <Label className="text-xs text-muted-foreground uppercase">
+            {key.replace(/_/g, " ")}
+          </Label>
+          <p className="text-sm font-medium">
+            {typeof value === "object" ? JSON.stringify(value) : String(value ?? "—")}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatDate(dateString?: string) {
+  return dateString ? new Date(dateString).toLocaleDateString() : "—";
+}
+
+// Some endpoints return `{ data: [...] }`, others return a bare array.
+// This normalizes both shapes into a plain array we can safely .map() over.
+function toArray<T>(value: T[] | { data?: T[] } | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  if (value && Array.isArray(value.data)) return value.data;
+  return [];
 }
 
 export default function AdminMembersPage() {
   const { token } = useAuthStore();
-  const [members, setMembers] = useState<SlotData[]>([]);
+
+  // --- Members list state ---
+  // `allMembers` holds the full, unfiltered list fetched from the backend.
+  // Search, filtering, pagination, AND the membership dropdown options are
+  // all derived from this on the frontend — no separate filters endpoint.
+  const [allMembers, setAllMembers] = useState<SlotData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // live input, applied to `search` on submit
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<Filters>({
     membership_id: "",
     type: "",
     kyc_status: "",
   });
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    membership: [],
-  });
 
-  // Detail modal
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  // --- Detail modal state ---
+  const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailTab, setDetailTab] = useState("info");
-  const [slotInfo, setSlotInfo] = useState<any>(null);
-  const [slotDetails, setSlotDetails] = useState<any>(null);
-  const [slotEarnings, setSlotEarnings] = useState<any>(null);
-  const [slotWallet, setSlotWallet] = useState<any>(null);
-  const [slotPayout, setSlotPayout] = useState<any>(null);
-  const [slotNetwork, setSlotNetwork] = useState<any>(null);
+  const [detailTab, setDetailTab] = useState<DetailTab>("info");
+  const [slotInfo, setSlotInfo] = useState<DetailRecord | null>(null);
+  const [slotDetails, setSlotDetails] = useState<DetailRecord | null>(null);
+  const [slotEarnings, setSlotEarnings] = useState<EarningRecord[] | DetailRecord | null>(null);
+  const [slotWallet, setSlotWallet] = useState<WalletRecord[] | null>(null);
+  const [slotPayout, setSlotPayout] = useState<PayoutRecord[] | null>(null);
+  const [slotNetwork, setSlotNetwork] = useState<NetworkRecord[] | null>(null);
 
-  // Add member modal
+  // --- Add member modal state ---
   const [addOpen, setAddOpen] = useState(false);
-  const [addForm, setAddForm] = useState({
-    first_name: "",
-    last_name: "",
-    middle_name: "",
-    email: "",
-    contact: "",
-    username: "",
-    password: "",
-    sponsor: "",
-    membership_id: "",
-  });
+  const [addForm, setAddForm] = useState<AddMemberForm>(EMPTY_ADD_FORM);
   const [addLoading, setAddLoading] = useState(false);
 
-  // Adjust wallet modal
+  // --- Adjust wallet modal state ---
   const [adjustOpen, setAdjustOpen] = useState(false);
-  const [adjustForm, setAdjustForm] = useState({
-    slot_id: "",
-    amount: "",
-    details: "",
-  });
+  const [adjustForm, setAdjustForm] = useState<AdjustWalletForm>(EMPTY_ADJUST_FORM);
   const [adjustLoading, setAdjustLoading] = useState(false);
 
+  // Fetches the full member list from the backend. No search/filter/page
+  // params are sent at all — this is a plain "give me the members" call.
+  // Search, filtering, and pagination are handled entirely client-side
+  // below (see `filteredMembers` / `pagedMembers`).
   const loadMembers = useCallback(async () => {
     if (!token) return;
     setLoading(true);
-    try {
-      const body: any = {
-        page,
-        search,
-        per_page: 15,
-      };
-      if (filters.membership_id) body.membership = filters.membership_id;
-      if (filters.type) body.type = filters.type;
-      if (filters.kyc_status) body.kyc_status = filters.kyc_status;
 
-      const res = await apiPost<any>("/api/slot/get_full", body, token);
-      // Handle both paginated and non-paginated responses
-      if (res.data) {
-        setMembers(res.data);
-        setTotalPages(res.last_page || 1);
-        setTotal(res.total || res.data.length);
-      } else if (Array.isArray(res)) {
-        setMembers(res);
-        setTotalPages(1);
-        setTotal(res.length);
+    try {
+      const res = await apiPost<MembersResponse | SlotData[]>("/api/slot/get_full", {}, token);
+
+      // The API can return either a paginated object ({ data, last_page, total })
+      // or a plain array, depending on the endpoint's mood. Handle both.
+      if (Array.isArray(res)) {
+        setAllMembers(res);
+      } else if (res.data) {
+        setAllMembers(res.data);
       } else {
-        setMembers([]);
+        setAllMembers([]);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load members:", err);
       toast.error("Failed to load member list");
     }
-    setLoading(false);
-  }, [token, page, search, filters]);
 
-  const loadFilters = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await apiPost<any>("/api/slot/get_filters", {}, token);
-      if (res?.membership) {
-        setFilterOptions({ membership: res.membership });
-      }
-    } catch {
-      // filters are optional
-    }
+    setLoading(false);
   }, [token]);
 
+  // Load the full member list once on mount. `loadMembers` is called again
+  // later only to resync with the backend after a mutation (add member,
+  // adjust wallet, verify/reject) — never for search/filter/paging.
   useEffect(() => {
     loadMembers();
   }, [loadMembers]);
 
+  // Membership dropdown options, derived from whatever memberships actually
+  // appear in the loaded member list — no /api/slot/get_filters call.
+  const membershipOptions = useMemo<MembershipOption[]>(() => {
+    const seen = new Map<string, MembershipOption>();
+    for (const m of allMembers) {
+      if (m.membership_id == null || !m.membership_name) continue;
+      const key = String(m.membership_id);
+      if (!seen.has(key)) {
+        seen.set(key, { membership_id: m.membership_id, membership_name: m.membership_name });
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) =>
+      a.membership_name.localeCompare(b.membership_name)
+    );
+  }, [allMembers]);
+
+  // --- Client-side search + filtering ---
+  const filteredMembers = useMemo(() => {
+    let result = allMembers;
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((m) =>
+        [m.name, m.email, m.slot_no, m.slot_sponsor_no]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(q))
+      );
+    }
+
+    if (filters.membership_id) {
+      result = result.filter(
+        (m) => String(m.membership_id ?? "") === filters.membership_id
+      );
+    }
+
+    if (filters.type) {
+      result = result.filter((m) =>
+        filters.type === "placed" ? !!m.slot_placement_no : !m.slot_placement_no
+      );
+    }
+
+    if (filters.kyc_status) {
+      result = result.filter((m) => String(m.slot_status) === filters.kyc_status);
+    }
+
+    return result;
+  }, [allMembers, search, filters]);
+
+  // --- Client-side pagination over the filtered set ---
+  const total = filteredMembers.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pagedMembers = useMemo(
+    () => filteredMembers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredMembers, page]
+  );
+
+  // Reset to page 1 whenever search/filters change so we don't get stuck
+  // on a page that no longer has any results.
   useEffect(() => {
-    loadFilters();
-  }, [loadFilters]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
     setPage(1);
-    loadMembers();
-  };
+  }, [search, filters]);
 
-  const openDetail = async (slot: SlotData) => {
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setSearch(searchInput);
+  }
+
+  // Opens the detail modal for a member and loads their "info" tab
+  // (the other tabs load on-demand when clicked, see loadDetailTab).
+  async function openDetail(slot: SlotData) {
     setSelectedSlot(slot);
     setDetailOpen(true);
     setDetailTab("info");
-    // Load slot information
+
     try {
-      const info = await apiPost<any>(
+      const info = await apiPost<DetailRecord>(
         "/api/member/get_slot_information",
         { id: slot.slot_id },
         token
@@ -206,186 +340,164 @@ export default function AdminMembersPage() {
     } catch {
       setSlotInfo(null);
     }
-  };
+  }
 
-  const loadDetailTab = async (tab: string) => {
+  // Each tab in the detail modal hits its own endpoint, fetched lazily
+  // the first time the user clicks that tab.
+  async function loadDetailTab(tab: string) {
     if (!selectedSlot) return;
-    setDetailTab(tab);
+    setDetailTab(tab as DetailTab);
     const slotId = selectedSlot.slot_id;
 
     try {
-      switch (tab) {
+      switch (tab as DetailTab) {
         case "details": {
-          const d = await apiPost<any>(
-            "/api/member/get_slot_details",
-            { id: slotId },
-            token
-          );
-          setSlotDetails(d);
+          const data = await apiPost<DetailRecord>("/api/member/get_slot_details", { id: slotId }, token);
+          setSlotDetails(data);
           break;
         }
         case "earnings": {
-          const e = await apiPost<any>(
+          const data = await apiPost<EarningRecord[] | DetailRecord>(
             "/api/member/get_slot_earnings",
             { id: slotId },
             token
           );
-          setSlotEarnings(e);
+          setSlotEarnings(data);
           break;
         }
         case "wallet": {
-          const w = await apiPost<any>(
+          const data = await apiPost<WalletRecord[] | { data: WalletRecord[] }>(
             "/api/member/get_slot_wallet",
             { id: slotId },
             token
           );
-          setSlotWallet(w);
+          setSlotWallet(toArray(data));
           break;
         }
         case "payout": {
-          const p = await apiPost<any>(
+          const data = await apiPost<PayoutRecord[] | { data: PayoutRecord[] }>(
             "/api/member/get_slot_payout",
             { id: slotId },
             token
           );
-          setSlotPayout(p);
+          setSlotPayout(toArray(data));
           break;
         }
         case "network": {
-          const n = await apiPost<any>(
-            "/api/member/get_slot_network",
-            { id: slotId },
-            token
-          );
-          setSlotNetwork(n);
+          const data = await apiPost<NetworkRecord[]>("/api/member/get_slot_network", { id: slotId }, token);
+          setSlotNetwork(data);
           break;
         }
       }
     } catch (err) {
       console.error(`Failed to load ${tab}:`, err);
     }
-  };
+  }
 
-  const handleAddMember = async () => {
+  async function handleAddMember() {
     if (!token) return;
     setAddLoading(true);
+
     try {
-      await apiPost("/api/member/add_member", {
-        first_name: addForm.first_name,
-        last_name: addForm.last_name,
-        middle_name: addForm.middle_name,
-        email: addForm.email,
-        contact: addForm.contact,
-        username: addForm.username,
-        password: addForm.password,
-        slot_referral: addForm.sponsor,
-        membership_id: addForm.membership_id,
-        register_platform: "system",
-        country_id: 1,
-        slot_link: "referral",
-      }, token);
+      await apiPost(
+        "/api/member/add_member",
+        {
+          first_name: addForm.first_name,
+          last_name: addForm.last_name,
+          middle_name: addForm.middle_name,
+          email: addForm.email,
+          contact: addForm.contact,
+          username: addForm.username,
+          password: addForm.password,
+          slot_referral: addForm.sponsor,
+          membership_id: addForm.membership_id,
+          register_platform: "system",
+          country_id: 1,
+          slot_link: "referral",
+        },
+        token
+      );
+
       toast.success("Member added successfully");
       setAddOpen(false);
-      setAddForm({
-        first_name: "",
-        last_name: "",
-        middle_name: "",
-        email: "",
-        contact: "",
-        username: "",
-        password: "",
-        sponsor: "",
-        membership_id: "",
-      });
+      setAddForm(EMPTY_ADD_FORM);
       loadMembers();
-    } catch (err: any) {
-      if (err.errors) {
-        const messages = Object.values(err.errors).flat();
-        messages.forEach((msg: any) => toast.error(msg));
-      } else if (err.message) {
+    } catch (err) {
+      // Laravel validation errors come back as { errors: { field: [messages] } }.
+      // Show each one individually so the user knows exactly what to fix.
+      if (err && typeof err === "object" && "errors" in err && err.errors) {
+        const messages = Object.values(err.errors as Record<string, string[]>).flat();
+        messages.forEach((msg) => toast.error(msg));
+      } else if (err instanceof Error) {
         toast.error(err.message);
       } else {
         toast.error("Failed to add member");
       }
     }
-    setAddLoading(false);
-  };
 
-  const handleAdjustWallet = async () => {
+    setAddLoading(false);
+  }
+
+  async function handleAdjustWallet() {
     if (!token) return;
     setAdjustLoading(true);
-    try {
-      await apiPost("/api/member/adjust_wallet", {
-        slot_id: adjustForm.slot_id,
-        amount: adjustForm.amount,
-        plan: adjustForm.details || "MANUAL_ADJUSTMENT",
-        trigger: "Admin Wallet Adjustment",
-      }, token);
-      toast.success("Wallet adjusted successfully");
-      setAdjustOpen(false);
-      setAdjustForm({ slot_id: "", amount: "", details: "" });
-      loadMembers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to adjust wallet");
-    }
-    setAdjustLoading(false);
-  };
 
-  const handleVerify = async (slotId: number, status: string) => {
-    if (!token) return;
     try {
       await apiPost(
-        "/api/member/user_verification",
-        { id: slotId, status },
+        "/api/member/adjust_wallet",
+        {
+          slot_id: adjustForm.slot_id,
+          amount: adjustForm.amount,
+          plan: adjustForm.details || "MANUAL_ADJUSTMENT",
+          trigger: "Admin Wallet Adjustment",
+        },
         token
       );
+
+      toast.success("Wallet adjusted successfully");
+      setAdjustOpen(false);
+      setAdjustForm(EMPTY_ADJUST_FORM);
+      loadMembers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to adjust wallet");
+    }
+
+    setAdjustLoading(false);
+  }
+
+  async function handleVerify(slotId: number, status: "verified" | "rejected") {
+    if (!token) return;
+
+    try {
+      await apiPost("/api/member/user_verification", { id: slotId, status }, token);
       toast.success(`Member ${status === "verified" ? "verified" : "rejected"}`);
       loadMembers();
       setDetailOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "Verification failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Verification failed");
     }
-  };
-
-  const getKycBadge = (status: number) => {
-    switch (status) {
-      case 1:
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>;
-      case 2:
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
-    }
-  };
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Member List</h1>
-          <p className="text-muted-foreground">
-            Manage members and slots ({total} total)
-          </p>
+          <p className="text-muted-foreground">Manage members and slots ({total} total)</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Add Member
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setAdjustForm({ slot_id: "", amount: "", details: "" });
-              setAdjustOpen(true);
-            }}
-          >
+          <Button variant="outline" onClick={() => { setAdjustForm(EMPTY_ADJUST_FORM); setAdjustOpen(true); }}>
             <Wallet className="h-4 w-4 mr-2" />
             Adjust Wallet
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* --- Filters --- */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4">
@@ -394,8 +506,8 @@ export default function AdminMembersPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name, username, email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -404,16 +516,14 @@ export default function AdminMembersPage() {
 
             <Select
               value={filters.membership_id}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, membership_id: v === "all" ? "" : v }))
-              }
+              onValueChange={(v) => setFilters((f) => ({ ...f, membership_id: v === "all" ? "" : v }))}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Membership" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Memberships</SelectItem>
-                {filterOptions.membership.map((m) => (
+                {membershipOptions.map((m) => (
                   <SelectItem key={m.membership_id} value={String(m.membership_id)}>
                     {m.membership_name}
                   </SelectItem>
@@ -423,9 +533,7 @@ export default function AdminMembersPage() {
 
             <Select
               value={filters.type}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, type: v === "all" ? "" : v }))
-              }
+              onValueChange={(v) => setFilters((f) => ({ ...f, type: v === "all" ? "" : v }))}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Type" />
@@ -439,9 +547,7 @@ export default function AdminMembersPage() {
 
             <Select
               value={filters.kyc_status}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, kyc_status: v === "all" ? "" : v }))
-              }
+              onValueChange={(v) => setFilters((f) => ({ ...f, kyc_status: v === "all" ? "" : v }))}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="KYC Status" />
@@ -454,104 +560,24 @@ export default function AdminMembersPage() {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" onClick={() => { setPage(1); loadMembers(); }}>
+            <Button variant="outline" onClick={() => loadMembers()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Members Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Member Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Sponsor</TableHead>
-                <TableHead>Membership</TableHead>
-                <TableHead>KYC</TableHead>
-                <TableHead>Wallet</TableHead>
-                <TableHead>Date Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-10">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : members.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                    No members found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                members.map((m) => (
-                  <TableRow key={m.slot_id}>
-                    <TableCell className="font-medium">{m.slot_no || "—"}</TableCell>
-                    <TableCell>{m.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{m.email}</TableCell>
-                    <TableCell>{m.slot_sponsor_no || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{m.membership_name || "—"}</Badge>
-                    </TableCell>
-                    <TableCell>{getKycBadge(Number(m.slot_status) || 0)}</TableCell>
-                    <TableCell>{m.wallet ?? "0.00"}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {m.slot_date_created || "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDetail(m)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* --- Members table --- */}
+      <MembersTable
+        loading={loading}
+        members={pagedMembers}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onView={openDetail}
+      />
 
-      {/* Detail Modal */}
+      {/* --- Detail modal --- */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -560,6 +586,7 @@ export default function AdminMembersPage() {
               Slot Information — {selectedSlot?.name}
             </DialogTitle>
           </DialogHeader>
+
           <Tabs value={detailTab} onValueChange={loadDetailTab}>
             <TabsList className="grid grid-cols-6 w-full">
               <TabsTrigger value="info">Info</TabsTrigger>
@@ -571,67 +598,41 @@ export default function AdminMembersPage() {
             </TabsList>
 
             <TabsContent value="info" className="space-y-4 mt-4">
-              {slotInfo ? (
+              {!slotInfo ? (
+                <LoadingSpinner />
+              ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(slotInfo).map(([key, value]) => (
-                    <div key={key} className="space-y-1">
-                      <Label className="text-xs text-muted-foreground uppercase">
-                        {key.replace(/_/g, " ")}
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {typeof value === "object" ? JSON.stringify(value) : String(value ?? "—")}
-                      </p>
-                    </div>
-                  ))}
-                  {/* KYC Verification */}
+                  <KeyValueGrid data={slotInfo} />
+                  {/* Only members still pending KYC review get approve/reject buttons */}
                   {selectedSlot?.slot_status === "0" && (
                     <div className="col-span-2 flex gap-2 pt-4 border-t">
                       <Button
                         className="bg-green-600 hover:bg-green-700"
-                        onClick={() => handleVerify(selectedSlot.slot_id, "verified")}
+                        onClick={() => selectedSlot && handleVerify(selectedSlot.slot_id, "verified")}
                       >
                         <Shield className="h-4 w-4 mr-2" />
                         Approve KYC
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => handleVerify(selectedSlot.slot_id, "rejected")}
+                        onClick={() => selectedSlot && handleVerify(selectedSlot.slot_id, "rejected")}
                       >
                         Reject KYC
                       </Button>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
               )}
             </TabsContent>
 
             <TabsContent value="details" className="mt-4">
-              {slotDetails ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(slotDetails).map(([key, value]) => (
-                    <div key={key} className="space-y-1">
-                      <Label className="text-xs text-muted-foreground uppercase">
-                        {key.replace(/_/g, " ")}
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {typeof value === "object" ? JSON.stringify(value) : String(value ?? "—")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
-              )}
+              {slotDetails ? <KeyValueGrid data={slotDetails} /> : <LoadingSpinner />}
             </TabsContent>
 
             <TabsContent value="earnings" className="mt-4">
-              {slotEarnings ? (
+              {!slotEarnings ? (
+                <LoadingSpinner />
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -642,17 +643,18 @@ export default function AdminMembersPage() {
                   </TableHeader>
                   <TableBody>
                     {Array.isArray(slotEarnings) && slotEarnings.length > 0 ? (
-                      slotEarnings.map((e: any, i: number) => (
+                      slotEarnings.map((e, i) => (
                         <TableRow key={i}>
                           <TableCell>{e.type || e.plan_name || "—"}</TableCell>
                           <TableCell>{e.amount ?? "0.00"}</TableCell>
-                          <TableCell>{e.created_at ? new Date(e.created_at).toLocaleDateString() : "—"}</TableCell>
+                          <TableCell>{formatDate(e.created_at)}</TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell colSpan={3} className="text-center text-muted-foreground">
-                          {typeof slotEarnings === "object" && !Array.isArray(slotEarnings)
+                          {/* If it wasn't an array, it's probably a summary object — show it as key/value rows */}
+                          {!Array.isArray(slotEarnings)
                             ? Object.entries(slotEarnings).map(([k, v]) => (
                                 <div key={k} className="flex justify-between py-1">
                                   <span className="capitalize">{k.replace(/_/g, " ")}</span>
@@ -665,15 +667,13 @@ export default function AdminMembersPage() {
                     )}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
               )}
             </TabsContent>
 
             <TabsContent value="wallet" className="mt-4">
-              {slotWallet ? (
+              {!slotWallet ? (
+                <LoadingSpinner />
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -684,26 +684,15 @@ export default function AdminMembersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Array.isArray(slotWallet?.data || slotWallet) &&
-                    (slotWallet?.data || slotWallet).length > 0 ? (
-                      (slotWallet?.data || slotWallet).map((w: any, i: number) => (
+                    {slotWallet.length > 0 ? (
+                      slotWallet.map((w, i) => (
                         <TableRow key={i}>
                           <TableCell>{w.details || w.description || "—"}</TableCell>
-                          <TableCell
-                            className={
-                              Number(w.amount) >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }
-                          >
+                          <TableCell className={Number(w.amount) >= 0 ? "text-green-600" : "text-red-600"}>
                             {w.amount}
                           </TableCell>
                           <TableCell>{w.balance ?? "—"}</TableCell>
-                          <TableCell>
-                            {w.created_at
-                              ? new Date(w.created_at).toLocaleDateString()
-                              : "—"}
-                          </TableCell>
+                          <TableCell>{formatDate(w.created_at)}</TableCell>
                         </TableRow>
                       ))
                     ) : (
@@ -715,15 +704,13 @@ export default function AdminMembersPage() {
                     )}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
               )}
             </TabsContent>
 
             <TabsContent value="payout" className="mt-4">
-              {slotPayout ? (
+              {!slotPayout ? (
+                <LoadingSpinner />
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -734,20 +721,15 @@ export default function AdminMembersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Array.isArray(slotPayout?.data || slotPayout) &&
-                    (slotPayout?.data || slotPayout).length > 0 ? (
-                      (slotPayout?.data || slotPayout).map((p: any, i: number) => (
+                    {slotPayout.length > 0 ? (
+                      slotPayout.map((p, i) => (
                         <TableRow key={i}>
                           <TableCell>{p.amount ?? "0.00"}</TableCell>
                           <TableCell>{p.method_name || "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{p.status || "—"}</Badge>
                           </TableCell>
-                          <TableCell>
-                            {p.created_at
-                              ? new Date(p.created_at).toLocaleDateString()
-                              : "—"}
-                          </TableCell>
+                          <TableCell>{formatDate(p.created_at)}</TableCell>
                         </TableRow>
                       ))
                     ) : (
@@ -759,43 +741,30 @@ export default function AdminMembersPage() {
                     )}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
               )}
             </TabsContent>
 
             <TabsContent value="network" className="mt-4">
-              {slotNetwork ? (
-                <div className="space-y-2">
-                  {Array.isArray(slotNetwork) ? (
-                    slotNetwork.map((n: any, i: number) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Network className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{n.name || n.slot_id}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {n.membership_name} • {n.position || "—"}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{n.status || "Active"}</Badge>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center text-muted-foreground py-10">
-                      No network data available
-                    </p>
-                  )}
-                </div>
+              {!slotNetwork ? (
+                <LoadingSpinner />
+              ) : slotNetwork.length === 0 ? (
+                <p className="text-center text-muted-foreground py-10">No network data available</p>
               ) : (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+                <div className="space-y-2">
+                  {slotNetwork.map((n, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Network className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">{n.name || n.slot_id}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {n.membership_name} • {n.position || "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">{n.status || "Active"}</Badge>
+                    </div>
+                  ))}
                 </div>
               )}
             </TabsContent>
@@ -803,7 +772,7 @@ export default function AdminMembersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Member Modal */}
+      {/* --- Add member modal --- */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -812,73 +781,44 @@ export default function AdminMembersPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>First Name</Label>
-              <Input
-                value={addForm.first_name}
-                onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
-              />
+              <Input value={addForm.first_name} onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Last Name</Label>
-              <Input
-                value={addForm.last_name}
-                onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
-              />
+              <Input value={addForm.last_name} onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Middle Name</Label>
-              <Input
-                value={addForm.middle_name}
-                onChange={(e) => setAddForm((f) => ({ ...f, middle_name: e.target.value }))}
-              />
+              <Input value={addForm.middle_name} onChange={(e) => setAddForm((f) => ({ ...f, middle_name: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input
-                type="email"
-                value={addForm.email}
-                onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
-              />
+              <Input type="email" value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Contact</Label>
-              <Input
-                value={addForm.contact}
-                onChange={(e) => setAddForm((f) => ({ ...f, contact: e.target.value }))}
-              />
+              <Input value={addForm.contact} onChange={(e) => setAddForm((f) => ({ ...f, contact: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Username</Label>
-              <Input
-                value={addForm.username}
-                onChange={(e) => setAddForm((f) => ({ ...f, username: e.target.value }))}
-              />
+              <Input value={addForm.username} onChange={(e) => setAddForm((f) => ({ ...f, username: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Password</Label>
-              <Input
-                type="password"
-                value={addForm.password}
-                onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))}
-              />
+              <Input type="password" value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Sponsor Username</Label>
-              <Input
-                value={addForm.sponsor}
-                onChange={(e) => setAddForm((f) => ({ ...f, sponsor: e.target.value }))}
-              />
+              <Input value={addForm.sponsor} onChange={(e) => setAddForm((f) => ({ ...f, sponsor: e.target.value }))} />
             </div>
             <div className="space-y-2 col-span-2">
               <Label>Membership</Label>
-              <Select
-                value={addForm.membership_id}
-                onValueChange={(v) => setAddForm((f) => ({ ...f, membership_id: v }))}
-              >
+              <Select value={addForm.membership_id} onValueChange={(v) => setAddForm((f) => ({ ...f, membership_id: v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select membership" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filterOptions.membership.map((m) => (
+                  {membershipOptions.map((m) => (
                     <SelectItem key={m.membership_id} value={String(m.membership_id)}>
                       {m.membership_name}
                     </SelectItem>
@@ -898,7 +838,7 @@ export default function AdminMembersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Adjust Wallet Modal */}
+      {/* --- Adjust wallet modal --- */}
       <Dialog open={adjustOpen} onOpenChange={setAdjustOpen}>
         <DialogContent>
           <DialogHeader>
@@ -909,9 +849,7 @@ export default function AdminMembersPage() {
               <Label>Slot ID</Label>
               <Input
                 value={adjustForm.slot_id}
-                onChange={(e) =>
-                  setAdjustForm((f) => ({ ...f, slot_id: e.target.value }))
-                }
+                onChange={(e) => setAdjustForm((f) => ({ ...f, slot_id: e.target.value }))}
                 placeholder="Enter slot ID"
               />
             </div>
@@ -920,9 +858,7 @@ export default function AdminMembersPage() {
               <Input
                 type="number"
                 value={adjustForm.amount}
-                onChange={(e) =>
-                  setAdjustForm((f) => ({ ...f, amount: e.target.value }))
-                }
+                onChange={(e) => setAdjustForm((f) => ({ ...f, amount: e.target.value }))}
                 placeholder="0.00"
               />
             </div>
@@ -930,9 +866,7 @@ export default function AdminMembersPage() {
               <Label>Details / Reason</Label>
               <Input
                 value={adjustForm.details}
-                onChange={(e) =>
-                  setAdjustForm((f) => ({ ...f, details: e.target.value }))
-                }
+                onChange={(e) => setAdjustForm((f) => ({ ...f, details: e.target.value }))}
                 placeholder="Reason for adjustment"
               />
             </div>

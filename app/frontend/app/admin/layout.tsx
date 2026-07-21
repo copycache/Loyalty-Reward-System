@@ -14,17 +14,26 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
@@ -47,32 +56,99 @@ import {
   Shield,
 } from "lucide-react";
 
-const mainMenu = [
-  { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-];
-
-const managementMenu = [
-  { title: "Members", href: "/admin/members", icon: Users },
-  { title: "Slots", href: "/admin/slots", icon: Network },
-  { title: "Orders", href: "/admin/orders", icon: ShoppingCart },
-  { title: "Products", href: "/admin/products", icon: Package },
-];
-
-const financeMenu = [
-  { title: "Cash In", href: "/admin/cashin", icon: ArrowDownToLine },
-  { title: "Cash Out / Payout", href: "/admin/cashout", icon: ArrowUpFromLine },
-  { title: "Wallet", href: "/admin/wallet", icon: Wallet },
-];
-
-const reportsMenu = [
-  { title: "Reports", href: "/admin/reports", icon: BarChart3 },
-  { title: "Audit Trail", href: "/admin/audit", icon: FileText },
-];
-
-const settingsMenu = [
-  { title: "MLM Plans", href: "/admin/plans", icon: Network },
-  { title: "Maintenance", href: "/admin/maintenance", icon: Shield },
-  { title: "Settings", href: "/admin/settings", icon: Settings },
+const items = [
+  {
+    title: "Dashboard",
+    url: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Member List",
+    url: "/admin/members",
+    icon: Users,
+  },
+  {
+    title: "Products",
+    icon: Package,
+    children: [
+      { title: "Products", url: "/admin/products", icon: null },
+      // { title: "Product Category", url: "/admin/product-category" },
+    ],
+  },
+  {
+    title: "Management",
+    icon: Users,
+    children: [
+      {
+        title: "Slots",
+        url: "/admin/slots",
+        icon: Network,
+      },
+      {
+        title: "Orders",
+        url: "/admin/orders",
+        icon: ShoppingCart,
+      },
+    ],
+  },
+  {
+    title: "Finance",
+    icon: Wallet,
+    children: [
+      {
+        title: "Cash In",
+        url: "/admin/cashin",
+        icon: ArrowDownToLine,
+      },
+      {
+        title: "Cash Out / Payout",
+        url: "/admin/cashout",
+        icon: ArrowUpFromLine,
+      },
+      {
+        title: "Wallet",
+        url: "/admin/wallet",
+        icon: Wallet,
+      },
+    ],
+  },
+  {
+    title: "Reports",
+    icon: BarChart3,
+    children: [
+      {
+        title: "Reports",
+        url: "/admin/reports",
+        icon: BarChart3,
+      },
+      {
+        title: "Audit Trail",
+        url: "/admin/audit",
+        icon: FileText,
+      },
+    ],
+  },
+  {
+    title: "Configuration",
+    icon: Settings,
+    children: [
+      {
+        title: "MLM Plans",
+        url: "/admin/plans",
+        icon: Network,
+      },
+      {
+        title: "Maintenance",
+        url: "/admin/maintenance",
+        icon: Shield,
+      },
+      {
+        title: "Settings",
+        url: "/admin/settings",
+        icon: Settings,
+      },
+    ],
+  },
 ];
 
 export default function AdminLayout({
@@ -83,14 +159,17 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { token, user, loadUser, logout, _hydrated } = useAuthStore();
+
   const [initialized, setInitialized] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!_hydrated) return; // Wait for localStorage hydration
+    if (!_hydrated) return;
     if (!token) {
       router.replace("/member/login");
       return;
     }
+
     const init = async () => {
       try {
         if (!user) await loadUser();
@@ -104,6 +183,7 @@ export default function AdminLayout({
       }
       setInitialized(true);
     };
+
     init();
   }, [token, _hydrated]);
 
@@ -122,73 +202,125 @@ export default function AdminLayout({
   }
 
   const initials = user
-    ? `${user.first_name?.[0] || user.name?.[0] || "A"}${user.last_name?.[0] || ""}`.toUpperCase()
+    ? `${user.first_name?.[0] || user.name?.[0] || "A"}${
+        user.last_name?.[0] || ""
+      }`.toUpperCase()
     : "AD";
-
-  const renderMenuGroup = (
-    items: typeof mainMenu,
-    label?: string
-  ) => (
-    <SidebarGroup>
-      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-              >
-                <Link href={item.href}>
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
 
   return (
     <SidebarProvider>
-      <Sidebar className="border-r">
-        <SidebarHeader className="p-4">
-          <Link href="/admin/dashboard" className="flex items-center gap-2">
-            <img
-              src="/images/logo/logo.png"
-              alt="Logo"
-              className="h-8"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <div>
-              <span className="font-bold text-lg text-blue-700">
-                Travel Connect
-              </span>
-              <span className="block text-[10px] font-semibold text-blue-500 uppercase tracking-wider">
-                Admin Panel
-              </span>
-            </div>
-          </Link>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                  {/* Logo placeholder */}
+                  <img
+                    src="/images/logo/logo.png"
+                    alt="Logo"
+                    className="h-8"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">MLM System</span>
+                  <span className="truncate text-xs">Administrator</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
 
         <SidebarContent>
-          {renderMenuGroup(mainMenu)}
-          {renderMenuGroup(managementMenu, "Management")}
-          {renderMenuGroup(financeMenu, "Finance")}
-          {renderMenuGroup(reportsMenu, "Reports")}
-          {renderMenuGroup(settingsMenu, "Configuration")}
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              {items.map((item) => {
+                const hasActiveChild = item.children?.some(
+                  (child) => pathname === child.url
+                );
+
+                const isParentActive = pathname === item.url;
+
+                const isOpen = hasActiveChild || !!openMenus[item.title];
+
+                return (
+                  <SidebarMenu key={item.title}>
+                    <SidebarMenuItem>
+                      {item.children ? (
+                        <Collapsible
+                          open={isOpen}
+                          onOpenChange={(open) => {
+                            // ✅ Don't allow closing if a child is active
+                            if (hasActiveChild) return;
+                            setOpenMenus((prev) => ({
+                              ...prev,
+                              [item.title]: open,
+                            }));
+                          }}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton>
+                              <item.icon className="h-4 w-4" />
+                              <span className="flex-1">{item.title}</span>
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 ${
+                                  isOpen ? "rotate-180" : ""
+                                }`}
+                              />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {item.children.map((child) => (
+                                <SidebarMenuSubItem key={child.url}>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={pathname === child.url}
+                                  >
+                                    <Link href={child.url} className="flex items-center">
+                                      {child.icon && <child.icon className="mr-2 h-4 w-4" />}
+                                      <span>{child.title}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ) : (
+                        <SidebarMenuButton asChild isActive={isParentActive}>
+                          <Link href={item.url!}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                );
+              })}
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="p-4">
+        {/* Footer */}
+        <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+              <SidebarMenuButton size="lg">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  {/* Logo placeholder */}
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">John Doe</span>
+                  <span className="truncate text-xs">email@gmail.com</span>
+                </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -196,34 +328,62 @@ export default function AdminLayout({
       </Sidebar>
 
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="h-6" />
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          {/* Left: trigger + page title */}
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            {/* <Separator orientation="vertical" className="h-5" />
+            <span className="text-sm font-semibold">
+              {formatPath(pathname)}
+            </span> */}
+          </div>
+
+          {/* Spacer */}
           <div className="flex-1" />
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.photo_url} />
-                  <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden md:inline text-sm">
-                  {user?.name || `${user?.first_name} ${user?.last_name}`}
-                </span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout}>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          {/* Right: actions */}
+          <div className="flex items-center gap-1">
+            {/* Theme toggle */}
+            {/* <ModeToggle /> */}
+
+            <Separator orientation="vertical" className="h-5 mx-1" />
+
+            {/* User dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 px-2"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user?.photo_url} />
+                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline text-sm font-medium">
+                    {/* {displayName} */}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5">
+                  {/* <p className="text-sm font-medium">{displayName}</p> */}
+                  <p className="text-xs text-muted-foreground">Administrator</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-500 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         <main className="flex-1 p-4 lg:p-6">{children}</main>
