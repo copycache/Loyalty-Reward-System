@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblSlotLimit extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_slot_limit', function (Blueprint $table) {
-            $table->unsignedInteger('user_id');
+         Schema::create('tbl_slot_limit', function (Blueprint $table) 
+        {
+            $table->integer('user_id');
             $table->integer('active_slots');
             $table->integer('slot_limit');
         });
@@ -20,9 +23,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_slot_limit');
+        //
     }
-};
+}

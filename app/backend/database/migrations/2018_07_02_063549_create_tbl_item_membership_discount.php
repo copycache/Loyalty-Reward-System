@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblItemMembershipDiscount extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_item_membership_discount', function (Blueprint $table) {
-            $table->id('item_membership_discount_id');
+        Schema::create('tbl_item_membership_discount', function (Blueprint $table) 
+        {
+            $table->increments('item_membership_discount_id');
             $table->integer('membership_id');
             $table->integer('item_id');
             $table->double('discount')->default(0);
@@ -21,9 +24,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_item_membership_discount');
+        //
     }
-};
+}

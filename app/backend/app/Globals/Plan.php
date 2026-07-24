@@ -2,23 +2,11 @@
 namespace App\Globals;
 
 use DB;
-use App\Models\Tbl_membership;
-use App\Models\Tbl_membership_income;
 use App\Models\Tbl_mlm_plan;
-use App\Models\Tbl_membership_indirect_level;
-use App\Models\Tbl_membership_unilevel_level;
-use App\Models\Tbl_mlm_unilevel_settings;
-use App\Models\Tbl_stairstep_settings;
-use App\Models\Tbl_stairstep_rank;
-use App\Models\Tbl_binary_pairing;
-use App\Models\Tbl_binary_settings;
-use App\Models\Tbl_binary_points_settings;
 use App\Models\Tbl_label;
 
-use App\Globals\Audit_trail;
 use App\Globals\Get_plan;
 use App\Globals\Update_plan;
-use Carbon\Carbon;
 class Plan
 {
 	public static function get($plan)
@@ -119,21 +107,5 @@ class Plan
 			$update_plan["mlm_plan_trigger"] = $update;
 			Tbl_mlm_plan::where("mlm_plan_code",$code)->update($update_plan);			
 		}
-	}
-
-	public static function update_board($levels, $depth, $bonus)
-	{
-		DB::table('tbl_mlm_board_settings')->truncate();
-		foreach($bonus as $key => $value)
-		{
-			$insert['board_depth'] = $depth;
-			$insert['board_level'] = $key + 1;
-			$insert['graduation_bonus'] = $value;
-			DB::table('tbl_mlm_board_settings')->insert($insert);
-		}	
-		$return["status_message"]  = "Successfully updated"; 
-		$return["status"]         = "success"; 
-		$return["status_code"]    = 201; 
-		return $return;
 	}
 }

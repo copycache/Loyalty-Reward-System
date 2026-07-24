@@ -1,27 +1,20 @@
 <?php
 namespace App\Globals;
 
-use DB;
 use Carbon\Carbon;
 use Request;
 use App\Models\Tbl_cash_in_proofs;
 use App\Models\Tbl_cash_in_method;
 use App\Models\Tbl_cash_in_method_category;
 use App\Models\Tbl_slot;
-use App\Models\User;
 use App\Globals\Audit_trail;
 use App\Globals\Log;
 use App\Globals\Currency;
 use App\Models\Tbl_currency;
-use App\Models\Tbl_other_settings;
-use App\Models\Tbl_dealer;
-use App\Models\Tbl_retailer;
 use App\Models\Tbl_user_process;
 
 
 use Validator;
-use Hash;
-use Excel;
 class CashIn
 {
 	public static function get_transactions($params = null, $slot_owner = null)
@@ -123,11 +116,6 @@ class CashIn
 		if($currency && $currency != "all")
 		{
 			$data = $data->where("cash_in_method_currency", $currency);
-		}
-
-		if($check['eloading'] == 1)
-		{
-			$data = $data->where("cash_in_method_currency","!=","LW");
 		}
 
 		return $data->get();
@@ -353,37 +341,9 @@ class CashIn
 							$currency_id    = Tbl_currency::where('currency_abbreviation',$transaction->cash_in_wallet)->value('currency_id');
 							Log::insert_wallet($transaction->slot_id, $transaction->cash_in_receivable,"CASH IN", $currency_id, $transaction->cash_in_proof_id);
 							
-		
-							/* DEALERS BONUS */
-							$proceed_to_retail = Tbl_other_settings::where("key","retailer")->first() ? Tbl_other_settings::where("key","retailer")->first()->value : 0;
-							$dealers_bonus     = Tbl_other_settings::where("key","dealers_bonus")->first() ? Tbl_other_settings::where("key","dealers_bonus")->first()->value : 0;
-							
-							if($proceed_to_retail == 1 && $dealers_bonus != 0)
-							{
-								$slot = Tbl_slot::where("slot_id",$transaction->slot_id)->first();
-								if($slot)
-								{
-									if($slot->is_retailer == 1)
-									{
-										$retailer_slot  = Tbl_retailer::where("slot_id",$slot->slot_id)->first();
-										if($retailer_slot)
-										{
-											$dealer_slot = Tbl_slot::where("slot_id",$retailer_slot->dealer_slot_id)->first();
-											if($dealer_slot)
-											{
-												$details 			   = "";
-												$dealer_bonus_computed = $transaction->cash_in_receivable * ($dealers_bonus/100);
-		
-												Log::insert_wallet($dealer_slot->slot_id,$dealer_bonus_computed,"DEALERS_BONUS");
-												Log::insert_earnings($dealer_slot->slot_id,$dealer_bonus_computed,"DEALERS_BONUS","CASH IN",$retailer_slot->slot_id,$details);
-											}
-										}
-									}
-								}
-							}
 						}
 						
-						$data = Tbl_cash_in_proofs::where("cash_in_proof_id", $transaction->cash_in_proof_id)->update(["cash_in_status" => $params['process'], "cash_in_message" => $params['message']]);
+						Tbl_cash_in_proofs::where("cash_in_proof_id", $transaction->cash_in_proof_id)->update(["cash_in_status" => $params['process'], "cash_in_message" => $params['message']]);
 						$return["status"] 		  = "success";
 						$return["status_message"] = "Successfully ".$params["process"]." transaction!";
 					}
@@ -471,36 +431,9 @@ class CashIn
 							$currency_id    = Tbl_currency::where('currency_abbreviation',$transaction->cash_in_wallet)->value('currency_id');
 							Log::insert_wallet($transaction->slot_id, $transaction->cash_in_receivable,"CASH IN", $currency_id, $transaction->cash_in_proof_id);
 						
-
-							/* DEALERS BONUS */
-							$proceed_to_retail = Tbl_other_settings::where("key","retailer")->first() ? Tbl_other_settings::where("key","retailer")->first()->value : 0;
-							$dealers_bonus     = Tbl_other_settings::where("key","dealers_bonus")->first() ? Tbl_other_settings::where("key","dealers_bonus")->first()->value : 0;
-							
-							if($proceed_to_retail == 1 && $dealers_bonus != 0)
-							{
-								$slot = Tbl_slot::where("slot_id",$transaction->slot_id)->first();
-								if($slot)
-								{
-									if($slot->is_retailer == 1)
-									{
-										$retailer_slot  = Tbl_retailer::where("slot_id",$slot->slot_id)->first();
-										if($retailer_slot)
-										{
-											$dealer_slot = Tbl_slot::where("slot_id",$retailer_slot->dealer_slot_id)->first();
-											if($dealer_slot)
-											{
-												$details 			   = "";
-												$dealer_bonus_computed = $transaction->cash_in_receivable * ($dealers_bonus/100);
-												
-												Log::insert_wallet($dealer_slot->slot_id,$dealer_bonus_computed,"DEALERS_BONUS");
-												Log::insert_earnings($dealer_slot->slot_id,$dealer_bonus_computed,"DEALERS_BONUS","CASH IN",$retailer_slot->slot_id,$details);
-											}
-										}
-									}
-								}
-							}
 						}
-						$data = Tbl_cash_in_proofs::where("cash_in_proof_id", $value)->update(["cash_in_status" => $params['process']]);
+						
+						Tbl_cash_in_proofs::where("cash_in_proof_id", $value)->update(["cash_in_status" => $params['process']]);
 						$return["status"] 		  = "success";
 						$return["status_message"] = "Successfully ".$params["process"]." all pending transactions!";
 					}

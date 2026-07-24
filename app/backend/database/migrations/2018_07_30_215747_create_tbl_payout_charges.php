@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblPayoutCharges extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_payout_charges', function (Blueprint $table) {
-            $table->id('payout_charges_id');
+        Schema::create('tbl_payout_charges', function (Blueprint $table) 
+        {
+            $table->increments('payout_charges_id');
             $table->double('payout_charges_charge')->default(0);
             $table->double('payout_charges_tax')->default(0);
             $table->double('payout_charges_giftcard')->default(0);
@@ -21,9 +24,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_payout_charges');
+        //
     }
-};
+}

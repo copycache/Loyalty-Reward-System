@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblPayoutConfig extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_payout_config', function (Blueprint $table) {
-            $table->id('payout_config_id');
+        Schema::create('tbl_payout_config', function (Blueprint $table) 
+        {
+            $table->increments('payout_config_id');
             $table->string('payout_config_type');
             $table->string('payout_config_name');
             $table->double('payout_minimum_encashment')->default(0);
@@ -22,9 +25,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_payout_config');
+        //
     }
-};
+}

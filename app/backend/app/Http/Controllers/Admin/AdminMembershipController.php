@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Admin;
 use App\Globals\Membership;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 class AdminMembershipController extends AdminController
 {
     public function get() 

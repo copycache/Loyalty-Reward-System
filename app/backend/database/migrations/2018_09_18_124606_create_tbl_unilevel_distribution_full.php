@@ -1,40 +1,46 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblUnilevelDistributionFull extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        if (!Schema::hasColumn('tbl_unilevel_distribute', 'distribute_full_id')) {
-            Schema::table('tbl_unilevel_distribute', function (Blueprint $table) {
+        if (!Schema::hasColumn('tbl_unilevel_distribute', 'distribute_full_id'))
+        {
+            Schema::table('tbl_unilevel_distribute', function (Blueprint $table) 
+            {
                 $table->integer('slot_id')->nullable();
                 $table->integer('distribute_full_id')->nullable();
-            });
+            }); 
         }
 
-        if (!Schema::hasTable('tbl_unilevel_distribute_full')) {
-            Schema::create('tbl_unilevel_distribute_full', function (Blueprint $table) {
-                $table->id('distribute_full_id');
+        if (!Schema::hasTable('tbl_unilevel_distribute_full'))
+        { 
+            Schema::create('tbl_unilevel_distribute_full', function (Blueprint $table) 
+            {
+                $table->increments('distribute_full_id');
                 $table->dateTime('start_date');
                 $table->dateTime('end_date');
                 $table->dateTime('distribution_date');
-            });
+            }); 
         }
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_unilevel_distribute_full');
-        // Note: We don't drop columns added to tbl_unilevel_distribute by default 
-        // to avoid potential data loss if this migration is rolled back alone.
+        //
     }
-};
+}

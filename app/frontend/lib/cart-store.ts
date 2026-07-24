@@ -4,6 +4,8 @@ import { create } from "zustand";
 import Cookies from "js-cookie";
 import { apiPost } from "@/lib/api";
 
+// --- Types ---
+
 interface CartItem {
   item_id: number;
   item_sku: string;
@@ -40,8 +42,12 @@ interface CartState {
   clearCart: () => void;
 }
 
+// --- Cookie helpers ---
+// The cart is stored as a flat array of item IDs, where duplicates mean
+// higher quantity. e.g. [5, 5, 7] = 2x item 5, 1x item 7.
+
 const COOKIE_NAME = "items";
-const COOKIE_EXPIRY = 30;
+const COOKIE_EXPIRY_DAYS = 30;
 
 function getItemsFromCookie(): number[] {
   try {
@@ -53,8 +59,23 @@ function getItemsFromCookie(): number[] {
 }
 
 function saveItemsToCookie(items: number[]) {
-  Cookies.set(COOKIE_NAME, JSON.stringify(items), { expires: COOKIE_EXPIRY, path: "/" });
+  Cookies.set(COOKIE_NAME, JSON.stringify(items), {
+    expires: COOKIE_EXPIRY_DAYS,
+    path: "/",
+  });
 }
+
+// Counts how many times each item ID appears in the flat array,
+// e.g. [5, 5, 7] -> { 5: 2, 7: 1 }
+function countItems(items: number[]): Record<number, number> {
+  const counts: Record<number, number> = {};
+  items.forEach((id) => {
+    counts[id] = (counts[id] || 0) + 1;
+  });
+  return counts;
+}
+
+// --- The store ---
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
@@ -65,42 +86,47 @@ export const useCartStore = create<CartState>((set, get) => ({
   walletType: "PHP",
   isOpen: false,
 
-  addToCart: (itemId: number) => {
+  addToCart: (itemId) => {
     const items = [...get().items, itemId];
     saveItemsToCookie(items);
     set({ items, cartCount: items.length });
     get().syncCartItems();
   },
 
-  removeFromCart: (itemId: number) => {
+  removeFromCart: (itemId) => {
     const items = get().items.filter((id) => id !== itemId);
     saveItemsToCookie(items);
     set({ items, cartCount: items.length });
     get().syncCartItems();
   },
 
-  changeQty: (itemId: number, qty: number) => {
-    if (qty < 1) qty = 1;
-    let items = get().items.filter((id) => id !== itemId);
-    for (let i = 0; i < qty; i++) {
-      items.push(itemId);
-    }
+  changeQty: (itemId, qty) => {
+    // Quantity can't go below 1 — if the user wants 0, they should
+    // use removeFromCart instead.
+    const safeQty = Math.max(1, qty);
+
+    // Rebuild the flat items array: remove all copies of this item,
+    // then add back exactly `safeQty` copies.
+    const otherItems = get().items.filter((id) => id !== itemId);
+    const items = [...otherItems, ...Array(safeQty).fill(itemId)];
+
     saveItemsToCookie(items);
     set({ items, cartCount: items.length });
 
-    // Update cart items qty locally — use discounted_price consistently
-    const cartItems = get().cartItems.map((ci) => {
-      if (ci.item_id === itemId) {
-        const price = ci.discounted_price || ci.item_price;
-        return { ...ci, item_qty: qty, subtotal: price * qty };
-      }
-      return ci;
+    // Update this item's quantity and subtotal locally, without
+    // waiting for a server round-trip (syncCartItems isn't called here).
+    const cartItems = get().cartItems.map((cartItem) => {
+      if (cartItem.item_id !== itemId) return cartItem;
+
+      const price = cartItem.discounted_price || cartItem.item_price;
+      return { ...cartItem, item_qty: safeQty, subtotal: price * safeQty };
     });
+
     set({ cartItems });
     get().getTotal();
   },
 
-  setWalletType: (type: "PHP" | "GC") => {
+  setWalletType: (type) => {
     set({ walletType: type });
     get().getTotal();
   },
@@ -113,40 +139,37 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
+  // Fetches full item details (price, thumbnail, etc.) from the server
+  // for the item IDs we have stored, then merges in the quantities.
   syncCartItems: async () => {
-    const items = get().items;
-    const uniqueItems = [...new Set(items)];
+    const { items } = get();
+    const uniqueItemIds = [...new Set(items)];
 
-    if (uniqueItems.length === 0) {
+    // Nothing in the cart — reset everything and skip the API call.
+    if (uniqueItemIds.length === 0) {
       set({ cartItems: [], total: 0, totalGc: 0, cartCount: 0 });
       return;
     }
 
-    // Build count map once to avoid repeated filter calls
-    const countMap: Record<number, number> = {};
-    items.forEach((id) => { countMap[id] = (countMap[id] || 0) + 1; });
+    const quantities = countItems(items);
 
     try {
-      const slotId = typeof window !== "undefined" ? localStorage.getItem("slot_id") : null;
-      const branchId = typeof window !== "undefined" ? localStorage.getItem("member_branch_id") : null;
+      const slotId =
+        typeof window !== "undefined" ? localStorage.getItem("slot_id") : null;
+      const branchId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("member_branch_id")
+          : null;
 
-      const response = await apiPost<CartItem[]>(
+      const serverItems = await apiPost<CartItem[]>(
         "/api/landing/get_cart_items",
-        {
-          items: uniqueItems,
-          slot_id: slotId,
-          branch_id: branchId,
-        }
+        { items: uniqueItemIds, slot_id: slotId, branch_id: branchId }
       );
 
-      const cartItems = response.map((item) => {
-        const qty = countMap[item.item_id] || 1;
+      const cartItems = serverItems.map((item) => {
+        const qty = quantities[item.item_id] || 1;
         const price = item.discounted_price || item.item_price;
-        return {
-          ...item,
-          item_qty: qty,
-          subtotal: price * qty,
-        };
+        return { ...item, item_qty: qty, subtotal: price * qty };
       });
 
       set({ cartItems });
@@ -156,20 +179,24 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
+  // Recalculates the total price across all cart items, in both
+  // regular currency (total) and GC points (totalGc).
   getTotal: () => {
-    const { cartItems, walletType } = get();
+    const { cartItems } = get();
+
     let total = 0;
     let totalGc = 0;
 
     cartItems.forEach((item) => {
-      total += (item.discounted_price || item.item_price) * item.item_qty;
+      const price = item.discounted_price || item.item_price;
+      total += price * item.item_qty;
       totalGc += (item.item_gc_price || 0) * item.item_qty;
     });
 
     set({ total, totalGc });
   },
 
-  toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),
+  toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
   openCart: () => set({ isOpen: true }),
   closeCart: () => set({ isOpen: false }),
 

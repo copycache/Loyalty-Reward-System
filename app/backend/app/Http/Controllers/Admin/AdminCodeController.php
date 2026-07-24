@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Globals\Code;
 use App\Globals\Item;
 use App\Globals\Audit_trail;
-use Illuminate\Support\Facades\Request;
+use Request;
 
 class AdminCodeController extends AdminController
 {

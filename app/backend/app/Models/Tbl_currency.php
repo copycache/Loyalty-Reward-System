@@ -8,16 +8,16 @@ class Tbl_currency extends Model
 {
     use HasFactory;
 
-protected $table = 'tbl_currency';
-protected $primaryKey = "currency_id";
-public $timestamps = false;
-protected $guarded = [];
+    protected $table = 'tbl_currency';
+    protected $primaryKey = "currency_id";
+    public $timestamps = false;
+    protected $guarded = [];
 
 
     public function scopeWallet($query)
     {
-    $query ->join('tbl_wallet','tbl_wallet.currency_id','=','tbl_currency.currency_id');
+    	$query ->join('tbl_wallet','tbl_wallet.currency_id','=','tbl_currency.currency_id');
 
-    return $query;
+    	return $query;
     }
 }

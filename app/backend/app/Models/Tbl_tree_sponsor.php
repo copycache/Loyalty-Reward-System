@@ -27,10 +27,6 @@ class Tbl_tree_sponsor extends Model
     {
     	return $query->leftJoin("tbl_membership","tbl_membership.membership_id","=","tbl_slot.slot_membership");
     }
-     public function scopeRank($query)
-    {
-    	return $query->leftJoin("tbl_stairstep_rank","tbl_stairstep_rank.stairstep_rank_id","=","tbl_slot.slot_stairstep_rank");
-    }
     public function scopeOwner($query)
     {
     	 return $query->join('users', 'users.id', '=', 'tbl_slot.slot_owner');

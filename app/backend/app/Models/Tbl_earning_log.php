@@ -8,9 +8,9 @@ class Tbl_earning_log extends Model
 {
     use HasFactory;
 
-protected $table = 'tbl_earning_log';
-protected $primaryKey = "earning_log_id";
-public $timestamps = false;
-protected $guarded = [];
+    protected $table = 'tbl_earning_log';
+    protected $primaryKey = "earning_log_id";
+    public $timestamps = false;
+    protected $guarded = [];
 
 }

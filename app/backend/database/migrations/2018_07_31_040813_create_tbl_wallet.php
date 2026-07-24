@@ -1,31 +1,38 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblWallet extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_wallet', function (Blueprint $table) {
-            $table->id('wallet_id');
+        Schema::create('tbl_wallet', function (Blueprint $table) 
+        {
+            $table->increments('wallet_id');
             $table->double('wallet_amount');
-            $table->unsignedInteger('slot_id')->nullable();
-            $table->unsignedInteger('currency_id')->nullable();
-            $table->text('wallet_address');
-            $table->dateTime('date_gc_triggered')->nullable();
+
+            $table->integer('slot_id')->unsigned()->nullable();
+            $table->foreign('slot_id')->references('slot_id')->on('tbl_slot')->onDelete('cascade');
+            
+            $table->integer('currency_id')->unsigned()->nullable();
+            $table->foreign('currency_id')->references('currency_id')->on('tbl_currency')->onDelete('cascade');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_wallet');
+        //
     }
-};
+}

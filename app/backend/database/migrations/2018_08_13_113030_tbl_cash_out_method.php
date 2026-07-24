@@ -1,19 +1,22 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class TblCashOutMethod extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_cash_out_method', function (Blueprint $table) {
-            $table->id('cash_out_method_id');
+            $table->increments('cash_out_method_id');
             $table->string('cash_out_method_category');
+            $table->foreign('cash_out_method_category')->references('cash_in_method_category')->on('tbl_cash_in_method_category')->onDelete('cascade');
             $table->string('cash_out_method_name');
             $table->longText('cash_out_method_thumbnail');
             $table->double('minimum_payout');
@@ -21,24 +24,16 @@ return new class extends Migration
             $table->double('cash_out_method_method_fee');
             $table->double('cash_out_method_withholding_tax');
             $table->string('is_archived')->default(0);
-            $table->double('cash_out_method_service_charge');
-            $table->string('cash_out_method_charge_to')->default('exclusive');
-            $table->integer('initial_payout')->default(0);
-            $table->double('savings_percentage')->default(0);
-            $table->string('cash_out_method_service_charge_type')->nullable();
-            $table->integer('gc_charge')->default(0);
-            $table->integer('product_charge')->default(0);
-            $table->string('survey_charge')->nullable();
-            $table->double('cash_limit')->default(0);
-            $table->string('cash_out_proc')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cash_out_method');
+        //
     }
-};
+}

@@ -22,8 +22,8 @@ class Tbl_tree_placement extends Model
     {
     	 return $query->join('users', 'users.id', '=', 'tbl_slot.slot_owner');
     }
-		public function scopeMembership($query)
-		{
-			return $query->join("tbl_membership","tbl_membership.membership_id","=","tbl_slot.slot_membership");
-		}
+	public function scopeMembership($query)
+	{
+		return $query->join("tbl_membership","tbl_membership.membership_id","=","tbl_slot.slot_membership");
+	}
 }

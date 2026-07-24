@@ -24,9 +24,8 @@ class CreateTblWalletLog extends Migration
             $table->string('wallet_log_date_created');
             $table->integer('currency_id')->unsigned()->nullable();
             
-            
-            
-            $table->integer('transaction_id')->nullable();
+            $table->foreign('currency_id')->references('currency_id')->on('tbl_currency')->onDelete('cascade');
+            $table->foreign('wallet_log_slot_id')->references('slot_id')->on('tbl_slot')->onDelete('cascade');
         });
     }
 

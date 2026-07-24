@@ -7,17 +7,14 @@ use Carbon\Carbon;
 use Request;
 use App\Models\Tbl_cashier;
 use App\Models\Tbl_inventory;
-use App\Models\User;
+use App\Models\Users;
 use App\Models\Tbl_item;
 use App\Models\Tbl_orders;
-use App\Models\Tbl_cashier_sales;
 use App\Models\Tbl_slot;
 use App\Models\Tbl_receipt;
 use App\Models\Tbl_currency;
 use App\Models\Tbl_item_membership_discount;
-use App\Models\Tbl_item_stairstep_rank_discount;
 use App\Models\Tbl_codes;
-use App\Models\Tbl_branch;
 use App\Models\Tbl_delivery_charge;
 use App\Models\Tbl_mlm_plan;
 use App\Models\Tbl_dragonpay_transaction;
@@ -140,12 +137,12 @@ class Cashier
 		$update_cashier['cashier_status']			=	$data['cashier_status'];
 
 		$old['cashier']  = Tbl_cashier::where('cashier_id', $data['cashier_id'])->first();
-		$old['user']     = User::where('id', $data['id'])->first();
+		$old['user']     = Users::where('id', $data['id'])->first();
 
 		Tbl_cashier::where('cashier_id', $data['cashier_id'])->update($update_cashier);
-		User::where('id', $data['id'])->update($update_user);
+		Users::where('id', $data['id'])->update($update_user);
 		$new['cashier']  = Tbl_cashier::where('cashier_id', $data['cashier_id'])->first();
-		$new['user']     = User::where('id', $data['id'])->first();
+		$new['user']     = Users::where('id', $data['id'])->first();
 		$action  		 = "Update_cashier";
 		$user            = Request::user()->id;
 		Audit_trail::audit(serialize($old),serialize($new),$user,$action);
@@ -347,7 +344,7 @@ class Cashier
 					$payment_given							= json_encode($payment);
 					$cashier_user_id 						= $retailer;
 
-					$return = Self::create_order($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,4,0,0,0,0,$data['shipping_fee'],$data['handling_fee'],$data['grandtotal'],$data['receiver_name'],$data['receiver_email'],$data['receiver_contact_number']);
+					$return = Self::create_order($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,4,0,$data['shipping_fee'],$data['handling_fee'],$data['grandtotal'],$data['receiver_name'],$data['receiver_email'],$data['receiver_contact_number']);
 					return $return;
 				}
 			}
@@ -576,39 +573,37 @@ class Cashier
 	}
 
 	//picked up = 1 means kinuha na yung item
-	public static function create_receipt($order_id, $from, $picked_up = 1, $voucher_deduct = 0)
-	{
+	public static function create_receipt($order_id, $from, $picked_up = 1)
+		{
 		$order = Tbl_orders::where('order_id', $order_id)->first();
 
 		if($picked_up == 0 || $order->delivery_method == 'pickup')
 		{
-			do
-			{
-				$claim_code = implode("-", str_split(strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)), 4));
-				$check_claim_code = DB::table('tbl_receipt')->where('claim_code', $claim_code)->get();
-			}
-			while (count($check_claim_code) != 0);
-			$claimed = 0;
+		do
+		{
+			$claim_code = implode("-", str_split(strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)), 4));
+			$check_claim_code = DB::table('tbl_receipt')->where('claim_code', $claim_code)->get();
+		}
+		while (count($check_claim_code) != 0);
+		$claimed = 0;
 		}
 		else
 		{
-			$claim_code = "none";
-			$claimed 	= 1;
+		$claim_code = "none";
+		$claimed 	= 1;
 		}
-
 
 		$insert_receipt['items'] 						= $order->items;
 		$insert_receipt['delivery_method'] 				= $order->delivery_method;
 		$insert_receipt['delivery_charge'] 				= $order->delivery_charge;
 		$insert_receipt['subtotal'] 					= $order->subtotal;
-		$insert_receipt['voucher'] 						= $voucher_deduct;
 		$insert_receipt['buyer_name'] 					= $order->buyer_name;
 		$insert_receipt['buyer_address'] 				= $order->buyer_address;
 		$insert_receipt['buyer_slot_code'] 				= $order->buyer_slot_code;
 		$insert_receipt['buyer_slot_id'] 				= $order->buyer_slot_id;
 		$insert_receipt['receipt_date_created'] 		= Carbon::now();
 		$insert_receipt['discount'] 					= $order->discount;
-		$insert_receipt['grand_total'] 					= $order->grand_total + $order->delivery_charge - $voucher_deduct;
+		$insert_receipt['grand_total'] 					= $order->grand_total + $order->delivery_charge;
 		$insert_receipt['claim_code'] 					= $claim_code;
 		$insert_receipt['claimed'] 						= $claimed;
 		$insert_receipt['retailer']						= $order->retailer;
@@ -625,46 +620,63 @@ class Cashier
 		$dd = json_decode($order->items);
 		foreach($dd as $key3 => $value3)
 		{
-			if(isset($value3->item_id))
+		if(isset($value3->item_id))
+		{
+			$insert['rel_receipt_id'] = $receipt_id;
+			$insert['item_id'] = $value3->item_id;
+			$insert['quantity'] = $value3->quantity;
+			$item_price = Tbl_item::where("item_id", $value3->item_id)->first()->item_price;
+			$insert['price'] = $item_price;
+			$insert['subtotal'] = ($item_price * $value3->quantity);
+			DB::table('tbl_receipt_rel_item')->insert($insert);
+		}
+		else
+		{
+			if($key3 == 'item_id')
 			{
-				$insert['rel_receipt_id'] = $receipt_id;
-				$insert['item_id'] = $value3->item_id;
-				$insert['quantity'] = $value3->quantity;
-				$item_price = Tbl_item::where("item_id", $value3->item_id)->first()->item_price;
-				$insert['price'] = $item_price;
-				$insert['subtotal'] = ($item_price * $value3->quantity);
-				DB::table('tbl_receipt_rel_item')->insert($insert);
+				$insert2['rel_receipt_id'] = $receipt_id;
+				$insert2['item_id'] = $value3;
 			}
-			else
+			if($key3 == 'quantity')
 			{
-				if($key3 == 'item_id')
-				{
-					$insert2['rel_receipt_id'] = $receipt_id;
-					$insert2['item_id'] = $value3;
-
-				}
-				if($key3 == 'quantity')
-				{
-					$insert2['quantity'] = $value3;
-				}
-
-				$x = 1;
+				$insert2['quantity'] = $value3;
 			}
+			$x = 1;
+		}
 		}
 
 		if($x > 0)
 		{
-			DB::table('tbl_receipt_rel_item')->insert($insert2);
-			$x = 0;
+		DB::table('tbl_receipt_rel_item')->insert($insert2);
+		$x = 0;
 		}
-
 
 		return $receipt_id;
 	}
 
-	public static function  create_order($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,$from, $delivery_method, $picked_up = 1, $change = 0, $manager_discount = 0, $remarks = null , $address = null, $cashier_method = 4,$payment_given = 0,$dragonpay_status = 0, $dragonpay_charged = 0, $voucher_deduct = 0,$shipping_fee_v2 = 0, $handling_fee = 0,$checkout_total = 0, $receiver_name = null, $receiver_email = null, $receiver_contact_number = null)
+
+	public static function create_order(
+		$ordered_item,
+		$vat,
+		$buyer_slot_id,
+		$cashier_user_id,
+		$from,
+		$delivery_method,
+		$picked_up = 1,
+		$change = 0,
+		$manager_discount = 0,
+		$remarks = null,
+		$address = null,
+		$cashier_method = 4,
+		$payment_given = 0,
+		$shipping_fee_v2 = 0,
+		$handling_fee = 0,
+		$checkout_total = 0,
+		$receiver_name = null,
+		$receiver_email = null,
+		$receiver_contact_number = null
+	)
 	{
-		// dd($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,$from, $delivery_method, $picked_up, $change, $manager_discount, $remarks, $address, $cashier_method,$payment_given );
 		$subtotal = 0;
 		if($delivery_method == "pickup"|| $delivery_method == "none")
 		{
@@ -721,7 +733,6 @@ class Cashier
 			{
 				$order_status = 'pickup';
 			}
-
 		}
 
 		if($payment_method->cashier_payment_method_name == 'GC')
@@ -736,14 +747,12 @@ class Cashier
 		$buyer = Tbl_slot::where('slot_id', $buyer_slot_id)->Owner()->first();
 
 		$orders = json_decode($ordered_item);
-
+		$item = [];
 		foreach($orders as $key => $value)
 		{
-			// dd($value['quantity']);
 			$item[$key] 									= Tbl_item::where('item_id', $value->item_id)->first();
 			$item['discount'][$key] 						= Self::get_customer_discount($buyer->slot_id,$value->item_id);
 			$item['discount'][$key]['original_price']		= $item[$key]['item_price'];
-
 
 			if($payment_method->cashier_payment_method_name == "GC")
 			{
@@ -754,16 +763,13 @@ class Cashier
 			{
 				if($item['discount'][$key]['percentage'] == 0)
 				{
-				
-						$item_price = $item[$key]['item_price'] * $value->quantity;
-						$discount = 'none';
+					$item_price = $item[$key]['item_price'] * $value->quantity;
+					$discount = 'none';
 				}
 				else
 				{
-					// $discount_to_deduct 	=	$item[$key]['item_price'] * ($item['discount'][$key]['percentage']/100);
-					$discount_to_deduct 	= $item['discount'][$key]['percentage']; //MAKE IT FIX
-					$item_price  			= ($item[$key]['item_price'] - $discount_to_deduct) * $value->quantity;
-
+					$discount_to_deduct = $item['discount'][$key]['percentage'];
+					$item_price = ($item[$key]['item_price'] - $discount_to_deduct) * $value->quantity;
 				}
 			}
 			
@@ -773,7 +779,6 @@ class Cashier
 				{
 					$charges  = $item[$key]['item_charged'] + (($item[$key]['item_charged']/100 * $item[$key]['qty_charged']) * ($value->quantity - 1));
 					$subtotal = $subtotal + $item_price + $charges;
-			
 				}
 				else
 				{
@@ -784,18 +789,13 @@ class Cashier
 			{
 				$subtotal = $subtotal + $item_price;
 			}
-			$get_plan_status		 = Tbl_mlm_plan::where('mlm_plan_code','PRODUCT_DOWNLINE_DISCOUNT')->first()->mlm_plan_enable;
-			if($get_plan_status == 1)
-			{
-				$value->product_downline_discount = $value->product_downline_discount ?? 0;
-				$subtotal = $subtotal - $value->product_downline_discount;
-			}
 		}
 		if($delivery_method == 'delivery') {
 			if($subtotal > 998) {
 				$delivery_charge = $delivery_charge + 50;
 			}
 		}
+
 		$discount = $item['discount'];
 		$manager_discount_amount = 0;
 		if($manager_discount > 0)
@@ -810,30 +810,23 @@ class Cashier
 		} else if ($vat == 2) {
 			$vat_amount = ($subtotal - $manager_discount_amount) - (($subtotal - $manager_discount_amount) / 1.12);
 		}
-		if($dragonpay_status == 0)
-		{
-			$inventory_codes = Self::inventory_codes_ordered($ordered_item, $retailer, $buyer->slot_id);
-		}
-		else {
-			$inventory_codes['status_code'] = 200;
-		}
+
+		$inventory_codes = Self::inventory_codes_ordered($ordered_item, $retailer, $buyer->slot_id);
+
 		if($inventory_codes['status_code'] < 400)
 		{
-			$grand_total = $subtotal + $delivery_charge + ($vat == 1 ? $vat_amount : 0) + ($dragonpay_charged - ($manager_discount_amount - $voucher_deduct))+ $shipping_fee_v2 + $handling_fee;
-			
+			$grand_total = $subtotal + $delivery_charge + ($vat == 1 ? $vat_amount : 0) - $manager_discount_amount + $shipping_fee_v2 + $handling_fee;
 			if($grand_total == $checkout_total)
 			{
 				$insert['items']				= $ordered_item;
 				$insert['delivery_method']		= $delivery_method;
 				$insert['delivery_charge']		= $delivery_charge;
 				$insert['subtotal']				= $subtotal;
-				$insert['voucher']				= $voucher_deduct;
 				$insert['buyer_name']			= $buyer->name;
 				$insert['buyer_address']		= $address;
 				$insert['buyer_slot_code']		= $buyer->slot_no;
 				$insert['buyer_slot_id']		= $buyer->slot_id;
 				$insert['order_date_created']	= Carbon::now();
-				$insert['dragonpay_charged']	= $dragonpay_charged;
 				$insert['change']				= $change;
 				$insert['discount']				= $payment_method->cashier_payment_method_name == "GC" ? "None, GC payment" : json_encode($discount);
 				$insert['grand_total']			= $grand_total;
@@ -854,50 +847,24 @@ class Cashier
 			
 				if($from != 'cashier' && $from != 'stockist')
 				{
-					if($dragonpay_status == 0)
+					if($payment_method->cashier_payment_method_name == 'Wallet')
 					{
-						if($payment_method->cashier_payment_method_name == 'Wallet')
-						{
-							Log::insert_wallet($buyer->slot_id, $grand_total * -1, $from, $currency_id->currency_id);
-							
-							if($voucher_deduct > 0)
-							{
-								Log::insert_wallet($buyer->slot_id, $voucher_deduct * -1, $from, 13);
-							}
-						}
-						elseif($payment_method->cashier_payment_method_name == 'COD')
-						{
-							$insert_log['wallet_log_slot_id']				= $buyer->slot_id;						
-							$insert_log['wallet_log_amount']				= $grand_total * -1;						
-							$insert_log['wallet_log_details']				= "Shop/Purchased (COD)";						
-							$insert_log['wallet_log_type']					= "CREDIT";					
-							$insert_log['wallet_log_running_balance']		= 0;								
-							$insert_log['wallet_log_date_created']			= Carbon::now();							
-							$insert_log['currency_id']						= 15;	
-						
-							Tbl_wallet_log::insert($insert_log);
-							
-							if($voucher_deduct > 0)
-							{
-								Log::insert_wallet($buyer->slot_id, $voucher_deduct * -1, $from, 13);
-							}
-						}
-						if($payment_method->cashier_payment_method_name == 'GC')
-						{
-							Log::insert_wallet($buyer->slot_id, $grand_total * -1, $from, $currency_id->currency_id);
-						}
+						Log::insert_wallet($buyer->slot_id, $grand_total * -1, $from, $currency_id->currency_id);
 					}
-					elseif($dragonpay_status == 1)
+					elseif($payment_method->cashier_payment_method_name == 'COD')
 					{
 						$insert_log['wallet_log_slot_id']				= $buyer->slot_id;						
 						$insert_log['wallet_log_amount']				= $grand_total * -1;						
-						$insert_log['wallet_log_details']				= "Ecommerce (DRAGONPAY)";						
+						$insert_log['wallet_log_details']				= "Shop/Purchased (COD)";						
 						$insert_log['wallet_log_type']					= "CREDIT";					
 						$insert_log['wallet_log_running_balance']		= 0;								
 						$insert_log['wallet_log_date_created']			= Carbon::now();							
-						$insert_log['currency_id']						= 12;	
-						
+						$insert_log['currency_id']						= 15;	
 						Tbl_wallet_log::insert($insert_log);
+					}
+					if($payment_method->cashier_payment_method_name == 'GC')
+					{
+						Log::insert_wallet($buyer->slot_id, $grand_total * -1, $from, $currency_id->currency_id);
 					}
 				}
 			
@@ -908,9 +875,9 @@ class Cashier
 				{
 					if(isset($value3->item_id))
 					{
-						$insert_order['rel_order_id'] 				= $order_id;
-						$insert_order['item_id'] 					= $value3->item_id;
-						$insert_order['quantity'] 					= $value3->quantity;
+						$insert_order['rel_order_id'] = $order_id;
+						$insert_order['item_id'] = $value3->item_id;
+						$insert_order['quantity'] = $value3->quantity;
 						DB::table('tbl_orders_rel_item')->insert($insert_order);
 					}
 					else
@@ -919,7 +886,6 @@ class Cashier
 						{
 							$insert_order2['rel_order_id'] = $order_id;
 							$insert_order2['item_id'] = $value3;
-	
 						}
 						if($key3 == 'quantity')
 						{
@@ -933,11 +899,10 @@ class Cashier
 					DB::table('tbl_orders_rel_item')->insert($insert_order2);
 					$x = 0;
 				}
-				$receipt_id = Self::create_receipt($order_id, $from, $picked_up, $voucher_deduct);
-	
+				$receipt_id = Self::create_receipt($order_id, $from, $picked_up, 0);
+
 				if(is_numeric($receipt_id))
 				{
-	
 					if($payment_method->cashier_payment_method_name != 'COD')
 					{
 						$check_if_auto_distribute = DB::table('tbl_mlm_feature')->where('mlm_feature_name', 'auto_distribute')->first();
@@ -951,18 +916,16 @@ class Cashier
 									MLM::purchase($buyer->slot_id,$value->item_id);
 								}
 							}
-							//update codes as used
-	
 						}
 						MLM::purchase_item($ordered_item, $buyer_slot_id,$subtotal);
 					}
 					else
 					{
-						$insert_cod['slot_id']					= $buyer_slot_id;
-						$insert_cod['order_id']					= $order_id;
-						$insert_cod['ordered_item']				= $ordered_item;
-						$insert_cod['subtotal']					= $subtotal;
-						$insert_cod['date_ordered']			    = Carbon::now();
+						$insert_cod['slot_id']			= $buyer_slot_id;
+						$insert_cod['order_id']			= $order_id;
+						$insert_cod['ordered_item']		= $ordered_item;
+						$insert_cod['subtotal']			= $subtotal;
+						$insert_cod['date_ordered']		= Carbon::now();
 						Tbl_cod_list::insert($insert_cod);
 					}
 					
@@ -970,9 +933,7 @@ class Cashier
 					$return["status_code"]    		  = 200;
 					$return["status_message"] 		  = "Ordered Successfully!";
 					$return["receipt"]				  = Tbl_receipt::where('receipt_id', $receipt_id)->first();
-					// dd($return);
 					return $return;
-	
 				}
 			}
 			else
@@ -980,7 +941,6 @@ class Cashier
 				$return["status"]         = "Error";
 				$return["status_code"]    = 400;
 				$return["status_message"] = "Prices of items might change overtime. Please reload the page and try to checkout again!";
-
 				return $return;
 			}
 		}
@@ -989,6 +949,7 @@ class Cashier
 			return $inventory_codes;
 		}
 	}
+
 	public static function get_claim_codes($data)
 	{
 		$cashier 	= Tbl_cashier::where('cashier_user_id', Request::user()->id)->first();
@@ -1017,7 +978,7 @@ class Cashier
 			if($check_receipt)
 			{
 				$update['claimed'] = 1;
-
+				
 				Tbl_receipt::where('receipt_id', $receipt_id)->update($update);
 
 				$update2['order_status'] = "claimed";
@@ -1057,556 +1018,58 @@ class Cashier
 	public static function get_customer_discount($slot_id, $item_id)
 	{
 		$slot = Tbl_slot::where('slot_id', $slot_id)->first();
-		if($slot->slot_type == "SS")
-		{
-			$stockist = DB::table('tbl_stockist')->where('stockist_user_id', $slot->slot_owner)->first();
-			$stockist_discount = DB::table('tbl_item_stockist_discount')->where('item_id', $item_id)->where('stockist_level_id', $stockist->stockist_level)->first();
-			if($stockist_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'stockist';
-				$discount['percentage']	= $stockist_discount->discount;
-			}
-			else
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'none';
-				$discount['percentage']	= 0;
-			}
+		$discount = [
+			'item_id' => $item_id,
+			'type'    => 'none',
+			'percentage' => 0
+		];
+
+		if (!$slot) {
+			return $discount;
 		}
-		else
+
+		// If slot is stockist type
+		if ($slot->slot_type == "SS") 
 		{
-			$check_membership_discount = Tbl_item_membership_discount::where('membership_id', $slot->slot_membership)->where('item_id', $item_id)->first();
-			if($check_membership_discount)
+			$stockist = DB::table('tbl_stockist')
+				->where('stockist_user_id', $slot->slot_owner)
+				->first();
+
+			if ($stockist) 
+			{
+				$stockist_discount = DB::table('tbl_item_stockist_discount')
+					->where('item_id', $item_id)
+					->where('stockist_level_id', $stockist->stockist_level)
+					->first();
+
+				if ($stockist_discount) 
+				{
+					$discount['type'] = 'stockist';
+					$discount['percentage'] = $stockist_discount->discount;
+				}
+			}
+		} 
+		else 
+		{
+			// Membership-based discount only
+			$membership_discount = 0;
+			$check_membership_discount = Tbl_item_membership_discount::where('membership_id', $slot->slot_membership)
+				->where('item_id', $item_id)
+				->first();
+
+			if ($check_membership_discount) 
 			{
 				$membership_discount = $check_membership_discount->discount;
 			}
-			else
-			{
-				$membership_discount = 0;
-			}
 
-			$check_rank_discount = Tbl_item_stairstep_rank_discount::where('stairstep_rank_id', $slot->slot_stairstep_rank)->where('item_id', $item_id)->first();
-
-			if($check_rank_discount)
+			if ($membership_discount > 0) 
 			{
-				$rank_discount = $check_rank_discount->discount;
-			}
-			else
-			{
-				$rank_discount = 0;
-			}
-
-			if($membership_discount > $rank_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'membership';
-				$discount['percentage']	= $membership_discount;
-			}
-			elseif($rank_discount > $membership_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'rank';
-				$discount['percentage']	= $rank_discount;
-			}
-			else
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'none';
-				$discount['percentage']	= 0;
+				$discount['type'] = 'membership';
+				$discount['percentage'] = $membership_discount;
 			}
 		}
+
 		return $discount;
-	}
-	public static function ecom_checkout_v2($data)
-	{		
-		$get_user 														= Request::user();
-		$subtotal														= 0;
-
-		//direct = pickup, indirect = delivery
-		if($data['info']['method'] == 'Direct')
-		{
-			$rules['info']["branch_id"] 										= "required";
-
-			$validator = Validator::make($data, $rules);
-
-			if ($validator->fails())
-			{
-				$return["status"]         								= "error";
-				$return["status_code"]    								= 400;
-				$return["status_message"] 								= "Pick up location is required.";
-
-				return $return;
-			}
-			else
-			{
-
-				$delivery_charge 										= $data['info']["method_charge"];
-				$delivery_method 										= 'pickup';
-				$address         										= $data['info']["address"];
-				$order_status 											= 'processed';
-				$retailer  	  											= $data['info']['branch_id'];
-				//if true, slot ng bumibili yung nakalogin
-			}
-		}
-		if($data['info']['method'] == 'Indirect')
-		{
-			
-			$delivery_charge 											= $data['info']["method_charge"];
-			$delivery_method 											= 'delivery';
-			$order_status 												= 'pending';
-			$address         											= $data['info']["address"];
-			//retailer is yung main branch
-			$retailer 	  												= 1;
-		}
-		if($data['info']['slot']['slot_owner'] == $get_user->id)
-		{
-			$update_for_approval['user_status']							= 'already_purchased';
-			$update_for_approval['date_purchased']						= Carbon::now();
-			$update_for_approval['shop_status']							= 1;
-
-			Tbl_orders_for_approval::where('id',$data['info']['id'])->update($update_for_approval);
-
-			foreach($data['item_list'] as $key => $value)
-			{
-				$items[$key]['item_id'] 								= $value['item_id'];
-				$items[$key]['quantity'] 								= $value['quantity'];
-
-				$get_item[$key] 										= Tbl_item::where('item_id', $value['item_id'])->first();
-				$check_item_kit[$key]['type'] 	  						= $get_item[$key]->item_type;
-				$check_item_kit[$key]['item'] 	  						= $get_item[$key]->item_id;
-				$check_item_kit[$key]['quantity'] 						= $value['quantity'];
-				$items[$key]['discounted_price']  						= $value['discounted_price'];
-				$items[$key]['shipping_fee']  							= $value['shipping_fee'];
-				$items[$key]['total_per_item']  						= $value['total_per_item'];
-				$items[$key]['product_downline_discount']  				= $value['product_downline_discount'] ?? 0;
-
-				// $subtotal							 				= $subtotal + ($get_item[$key]->discounted_price * $value['item_qty']);
-			}
-			$currency_id												= Tbl_currency::where('currency_buying',1)->pluck('currency_id')->first();
-			$user 														= DB::table('tbl_slot')->where('tbl_slot.slot_id', $data['info']['slot']['slot_id'])->join('users', 'tbl_slot.slot_owner', '=', 'users.id')->join('tbl_wallet', 'tbl_slot.slot_id', '=', 'tbl_wallet.slot_id')->where('currency_id', $currency_id)->first();
-			// $grand_total 											= $subtotal + $delivery_charge;
-
-			if($data['info']['default_voucher_status'] == 1)
-			{
-				$datap['info']['voucher_deduct']										= $data['info']['sum'] >= $data['info']['min_spend'] ? $data['info']['voucher_deduct'] : 0;
-			}
-			else
-			{
-				$data['info']['voucher_deduct']										= 0;
-			}
-		
-			if($data['info']['payment_method'] == 'Wallet')
-			{
-				if($user->wallet_amount < $data['info']['grandtotal'])
-				{
-					$return["status"]         							= "Error";
-					$return["status_code"]    							= 400;
-					$return["status_message"] 							= "Not enough wallet.";
-					return $return;	
-				}	
-				else	
-				{	
-					$grand_total										= $data['info']['grandtotal'];
-					$payment 											= ["method" => "wallet", "amount" => $grand_total];
-					$ordered_item										= json_encode($items);
-					$vat												= 0;
-					$buyer_slot_id										= $user->slot_id;
-					$payment_given										= json_encode($payment);
-					$cashier_user_id 									= $retailer;
-	
-					$return = Self::create_order_v2($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,4,0,0,0,$data['info']['voucher_deduct'],$data['info']['courier'],$data['info']['shipping_fee'], $data['info']['other_discount'],$data['info']['transaction_number']);
-					return $return;
-				}
-			}
-			elseif($data['info']['payment_method'] == 'Dragonpay')
-			{
-				$subtotal 											    = $data['info']['sum'];
-				$payment 												= ["method" => "dragonpay", "amount" => $subtotal];
-				$ordered_item											= json_encode($items);
-				$vat													= 0;
-				$buyer_slot_id											= $user->slot_id;
-				$payment_given											= json_encode($payment);
-				$cashier_user_id 										= $retailer;
-				$txnid													= "TRANS".time();
-
-				$convenience_fee										= Tbl_dragonpay_settings::first()->service_charged ?? 0;
-				$_total													= $data['info']['total_item_price'] + $data['info']['shipping_fee'] + $convenience_fee;
-				$grand_total											= ($_total - $data['info']['voucher_deduct']) - $data['info']['other_discount'];
-
-				$insert['ordered_item']									= $ordered_item;										
-				$insert['vat']											= $vat;								
-				$insert['buyer_slot_id']								= $buyer_slot_id;											
-				$insert['cashier_user_id']								= $cashier_user_id;											
-				$insert['from']											= 'ecommerce';								
-				$insert['delivery_method']								= $delivery_method;											
-				$insert['picked_up']									= null;										
-				$insert['change']										= 0;									
-				$insert['manager_discount']								= 0;											
-				$insert['remarks']										= null;									
-				$insert['address']										= $address;									
-				$insert['cashier_method']								= 5;											
-				$insert['dragonpay_charged']							= $convenience_fee;									
-				$insert['payment_given']								= $payment_given;											
-				$insert['status']										= 'Pending';
-				$insert['subtotal']										= $data['info']['sum'];
-				$insert['voucher']										= $data['info']['voucher_deduct'];
-				$insert['grandtotal']									= $grand_total;
-				$insert['dragonpay_txnid']								= $txnid;
-				$insert['created_at']									= Carbon::now();
-				$insert['courier']										= $data['info']['courier'];
-				$insert['shipping_fee']									= $data['info']['shipping_fee'];
-				$insert['other_discount']								= $data['info']['other_discount'];
-				$insert['for_approval_trans_no']						= $data['info']['transaction_number'];
-
-				// dd($insert);
-				// $inventory_codes 							= Self::inventory_codes_ordered($ordered_item, $retailer, $buyer_slot_id, 1, $dragonpaytrans_id);
-				$product_summary 										= "";
-				
-				foreach ($data['item_list'] as $key => $value) 
-				{
-					$get_inventory_quantity                 			= Tbl_inventory::where('inventory_item_id',$value['item_id'])->pluck('inventory_quantity')->first();
-					$product_summary 									.=$value["item_sku"] . $value["item_id"] . "(x" . $value["quantity"] . ")-" ."PHP". number_format($value["discounted_price"]) . ",";
-				
-					// dd($)
-					if($value['quantity'] > $get_inventory_quantity)
-					{
-						$return["status"]         						= "Error";
-						$return["status_code"]    						= 400;
-						$return["status_message"] 						= $value["item_sku"]." does not have enough inventory.";
-
-						return $return;			
-					}			
-					else 			
-					{			
-						$inventory_codes['status_code'] 				= 200;
-					}					
-				}
-				if($data['info']['voucher_deduct'] > 0)
-				{
-					Log::insert_wallet($buyer_slot_id, $data['info']['voucher_deduct'] * -1, 'ecommerce', 13);
-				}
-				if($inventory_codes['status_code'] < 400)
-				{
-					// $product_summary									= $product_summary, "(+) Shipping Fee ".$data['info']['shipping_fee'] 
-					$dragonpaytrans_id 									= Tbl_dragonpay_transaction::insertGetId($insert);
-					$return 											= Dragonpay::create_transaction($dragonpaytrans_id, $buyer_slot_id,$product_summary,$grand_total,$data['info']['email_address'],$txnid);
-
-					return $return;	
-				}
-			}	
-			else
-			{
-				$grand_total										= $data['info']['grandtotal'];
-				$payment 											= ["method" => "cod", "amount" => $grand_total];
-				$ordered_item										= json_encode($items);
-				$vat												= 0;
-				$buyer_slot_id										= $user->slot_id;
-				$payment_given										= json_encode($payment);
-				$cashier_user_id 									= $retailer;
-
-				$return = Self::create_order_v2($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,6,0,0,0,$data['info']['voucher_deduct'],$data['info']['courier'],$data['info']['shipping_fee'], $data['info']['other_discount'],$data['info']['transaction_number']);
-				return $return;
-			}	
-		}
-		else
-		{									
-			$return["status"]         									= "Error";
-			$return["status_code"]    									= 400;
-			$return["status_message"] 									= "This ain't yours, is it?";
-
-			return $return;
-		}
-	}
-	public static function create_order_v2($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,$from, $delivery_method, $picked_up = 1, $change = 0, $manager_discount = 0, $remarks = null , $address = null, $cashier_method = 4,$payment_given = 0,$dragonpay_status = 0, $dragonpay_charged = 0, $voucher_deduct = 0,$courier = null, $shipping_fee = 0,$other_discount = 0,$for_approval_trans_no = null)
-	{
-		// dd($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,$from, $delivery_method, $picked_up, $change, $manager_discount, $remarks, $address, $cashier_method,$payment_given );
-		$subtotal = 0;
-		if($delivery_method == "pickup"|| $delivery_method == "none")
-		{
-			$delivery_charge = Tbl_delivery_charge::where("method_name","=","Direct")->first() ? Tbl_delivery_charge::where("method_name","Direct")->first()->method_charge : 0;
-		}
-		else
-		{
-			$delivery_charge = Tbl_delivery_charge::where("method_name","=","Indirect")->first() ? Tbl_delivery_charge::where("method_name","Indirect")->first()->method_charge : 0;
-		}
-		
-		if($from == 'cashier')
-		{
-			$check_cashier 	= Tbl_cashier::where('cashier_user_id', $cashier_user_id)->first();
-			$retailer 		= $check_cashier->cashier_branch_id;
-			$cashier 		= $check_cashier->cashier_id;
-			if($picked_up == 1)
-			{
-				$order_status = 'completed';
-			}
-			else
-			{
-				$order_status = 'pickup';
-			}
-
-			$payment_method = DB::table('tbl_cashier_payment_method')->where('cashier_payment_method_id', $cashier_method )->first();
-			
-		}
-		elseif($from == 'ecommerce')
-		{
-			$retailer = $cashier_user_id;
-			$cashier = null;
-			if($delivery_method == 'pickup')
-			{
-				$order_status = 'pickup';
-			}
-			else
-			{
-				$order_status = 'pending';
-			}
-
-			$payment_method = DB::table('tbl_cashier_payment_method')->where('cashier_payment_method_id', $cashier_method )->first();
-
-		}
-		elseif($from == "stockist")
-		{
-			$check_stockist = DB::table('tbl_stockist')->where('stockist_user_id',$cashier_user_id)->first();
-			$retailer = $check_stockist->stockist_branch_id;
-			$cashier =  $check_stockist->stockist_id;
-			$payment_method = DB::table('tbl_cashier_payment_method')->where('cashier_payment_method_id', $cashier_method )->first();
-			if($picked_up == 1)
-			{
-				$order_status = 'completed';
-			}
-			else
-			{
-				$order_status = 'pickup';
-			}
-
-		}
-
-		$currency_id = Tbl_currency::where('currency_buying', 1)->first();
-
-		$buyer = Tbl_slot::where('slot_id', $buyer_slot_id)->Owner()->first();
-
-		$orders = json_decode($ordered_item);
-
-		foreach($orders as $key => $value)
-		{
-			// dd($value);
-			$item[$key] 								= Tbl_item::where('item_id', $value->item_id)->first();
-			$item['discount'][$key] 					= Self::get_customer_discount($buyer->slot_id,$value->item_id);
-			$item['discount'][$key]['original_price']	= $item[$key]['item_price'];
-
-
-			if($payment_method->cashier_payment_method_name == "GC")
-			{
-				$item_price = $item[$key]['item_gc_price'] * $value->quantity;
-				$discount = 'none';
-			}
-			else
-			{
-				if($item['discount'][$key]['percentage'] == 0)
-				{
-				
-						$item_price = $item[$key]['item_price'] * $value->quantity;
-						$discount = 'none';
-				}
-				else
-				{
-					// $discount_to_deduct 	=	$item[$key]['item_price'] * ($item['discount'][$key]['percentage']/100);
-					$discount_to_deduct 	=	$item['discount'][$key]['percentage']; //Make it fix value
-					$item_price  			= ($item[$key]['item_price'] - $discount_to_deduct) * $value->quantity;
-
-				}
-			}
-			
-			if($delivery_method == 'delivery')
-			{
-				if($value->quantity > 1)
-				{
-					$charges  = $item[$key]['item_charged'] + (($item[$key]['item_charged']/100 * $item[$key]['qty_charged']) * ($value->quantity - 1));
-					$subtotal = $subtotal + $item_price + $charges;
-			
-				}
-				else
-				{
-					$subtotal = $subtotal + $item_price + $item[$key]['item_charged'] ;
-				}
-			}
-			else
-			{
-				$subtotal = $subtotal + $item_price;
-			}
-			$get_plan_status		 = Tbl_mlm_plan::where('mlm_plan_code','PRODUCT_DOWNLINE_DISCOUNT')->first()->mlm_plan_enable;
-			if($get_plan_status == 1)
-			{
-				$subtotal = $subtotal - $value->product_downline_discount;
-			}
-		}
-		
-		$discount = $item['discount'];
-		$manager_discount_amount = 0;
-		if($manager_discount > 0)
-		{
-			$manager_discount_amount = ($subtotal * ($manager_discount/100));
-		}
-
-		$vat_amount = 0;
-		if($vat == 1)
-		{
-			$vat_amount = ($subtotal - $manager_discount_amount) * 0.12;
-		}
-		if($dragonpay_status == 0)
-		{
-			$inventory_codes = Self::inventory_codes_ordered($ordered_item, $retailer, $buyer->slot_id);
-		}
-		else {
-			$inventory_codes['status_code'] = 200;
-		}
-		if($inventory_codes['status_code'] < 400)
-		{
-			$_total									= $subtotal + $shipping_fee + $dragonpay_charged + $vat_amount + $delivery_charge - $manager_discount_amount;
-			$total									= ($_total - $voucher_deduct) - $other_discount;
-			$grand_total 							= $total;
-			$insert['items']						= $ordered_item;
-			$insert['delivery_method']				= $delivery_method;
-			$insert['delivery_charge']				= $delivery_charge;
-			$insert['subtotal']						= $subtotal;
-			$insert['voucher']						= $voucher_deduct;
-			$insert['buyer_name']					= $buyer->name;
-			$insert['buyer_address']				= $address;
-			$insert['buyer_slot_code']				= $buyer->slot_no;
-			$insert['buyer_slot_id']				= $buyer->slot_id;
-			$insert['order_date_created']			= Carbon::now();
-			$insert['dragonpay_charged']			= $dragonpay_charged;
-			$insert['change']						= $change;
-			$insert['discount']						= $payment_method->cashier_payment_method_name == "GC" ? "None, GC payment" : json_encode($discount);
-			$insert['grand_total']					= $grand_total;
-			$insert['retailer']						= $retailer;
-			$insert['order_from']					= $from;
-			$insert['cashier_id']					= $cashier;
-			$insert['order_status']					= $order_status;
-			$insert['manager_discount']				= $manager_discount_amount;
-			$insert['tax_amount'] 					= $vat_amount;
-			$insert['remarks']						= $remarks;
-			$insert['payment_method']				= $payment_method->cashier_payment_method_id;
-			$insert['payment_tendered']				= $payment_given;
-			$insert['courier']						= $courier;
-			$insert['shipping_fee']					= $shipping_fee;
-			$insert['other_discount']				= $other_discount;
-			$insert['for_approval_trans_no']		= $for_approval_trans_no;
-		
-			$order_id = Tbl_orders::insertGetId($insert);
-			
-			if($from != 'cashier' && $from != 'stockist')
-			{
-				if($dragonpay_status == 0)
-				{
-					if($payment_method->cashier_payment_method_name == 'Wallet')
-					{
-						Log::insert_wallet($buyer->slot_id, $grand_total * -1, $from, $currency_id->currency_id);
-						
-						if($voucher_deduct > 0)
-						{
-							Log::insert_wallet($buyer->slot_id, $voucher_deduct * -1, $from, 13);
-						}
-					}
-					elseif($payment_method->cashier_payment_method_name == 'COD')
-					{
-						$insert_log['wallet_log_slot_id']				= $buyer->slot_id;						
-						$insert_log['wallet_log_amount']				= $grand_total * -1;						
-						$insert_log['wallet_log_details']				= "Shop/Purchased (COD)";						
-						$insert_log['wallet_log_type']					= "CREDIT";					
-						$insert_log['wallet_log_running_balance']		= 0;								
-						$insert_log['wallet_log_date_created']			= Carbon::now();							
-						$insert_log['currency_id']						= 14;	
-					
-					Tbl_wallet_log::insert($insert_log);
-						
-						if($voucher_deduct > 0)
-						{
-							Log::insert_wallet($buyer->slot_id, $voucher_deduct * -1, $from, 13);
-						}
-					}
-				}
-				elseif($dragonpay_status == 1)
-				{
-					$insert_log['wallet_log_slot_id']				= $buyer->slot_id;						
-					$insert_log['wallet_log_amount']				= $grand_total * -1;						
-					$insert_log['wallet_log_details']				= "Ecommerce (DRAGONPAY)";						
-					$insert_log['wallet_log_type']					= "CREDIT";					
-					$insert_log['wallet_log_running_balance']		= 0;								
-					$insert_log['wallet_log_date_created']			= Carbon::now();							
-					$insert_log['currency_id']						= 12;	
-					
-					Tbl_wallet_log::insert($insert_log);
-				}
-			}
-		
-			
-			$x = 0;
-			$dd = json_decode($ordered_item);
-			foreach($dd as $key3 => $value3)
-			{
-				if(isset($value3->item_id))
-				{
-					$insert_order['rel_order_id'] 				= $order_id;
-					$insert_order['item_id'] 					= $value3->item_id;
-					$insert_order['quantity'] 					= $value3->quantity;
-					DB::table('tbl_orders_rel_item')->insert($insert_order);
-				}
-				else
-				{
-					if($key3 == 'item_id')
-					{
-						$insert_order2['rel_order_id'] = $order_id;
-						$insert_order2['item_id'] = $value3;
-
-					}
-					if($key3 == 'quantity')
-					{
-						$insert_order2['quantity'] = $value3;
-					}
-					$x = 1;
-				}
-			}
-			if($x > 0)
-			{
-				DB::table('tbl_orders_rel_item')->insert($insert_order2);
-				$x = 0;
-			}
-
-			$receipt_id = Self::create_receipt($order_id, $from, $picked_up, $voucher_deduct);
-
-			if(is_numeric($receipt_id))
-			{
-
-				$check_if_auto_distribute = DB::table('tbl_mlm_feature')->where('mlm_feature_name', 'auto_distribute')->first();
-				if($check_if_auto_distribute->mlm_feature_enable == 0 && $buyer->membership_inactive ==  0)
-				{
-					$item_for_pv = json_decode($ordered_item);
-					foreach($item_for_pv as $key => $value)
-					{
-						for($x = 0; $x < $value->quantity; $x++)
-						{
-							MLM::purchase($buyer->slot_id,$value->item_id);
-						}
-					}
-					//update codes as used
-
-				}
-				MLM::purchase_item($ordered_item, $buyer_slot_id,$subtotal);
-				
-				$return["status"]         		  = "success";
-				$return["status_code"]    		  = 200;
-				$return["status_message"] 		  = "Ordered Successfully!";
-				$return["receipt"]				  = Tbl_receipt::where('receipt_id', $receipt_id)->first();
-				// dd($return);
-				return $return;
-
-			}
-		}
-		else
-		{
-			return $inventory_codes;
-		}
 	}
 
 	public static function dropshipping_checkout($data)

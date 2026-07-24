@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Request;
 use App\Models\Tbl_item;
-use Illuminate\Http\Request;
-
 class HomeController extends Controller
 {
-    public function get_product_view(Request $request)
+    public function get_product_view()
     {
-        return Tbl_item::find($request->input('item_id'));
+        $item_id        = Request::where('item_id');
+
+        $response       = Tbl_item::where('item_id',$item_id)->first();
+
+        return $response;
     }
 }

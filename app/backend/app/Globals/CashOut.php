@@ -14,7 +14,7 @@ use App\Models\Tbl_slot;
 use App\Models\Tbl_other_settings;
 use App\Models\Tbl_currency;
 use App\Models\Tbl_service_charge;
-use App\Models\User;
+use App\Models\Users;
 use App\Globals\Log;
 use App\Globals\CashIn;
 use App\Globals\Audit_trail;
@@ -461,7 +461,6 @@ class CashOut
 										if($slot_info->initial_payout == 1)
 										{
 											$minimum_encashment = $method_data->initial_payout;
-											// $additional_charges['survey_charge'] = $method_data->survey_charge;
 										}
 										else
 										{
@@ -524,7 +523,6 @@ class CashOut
 											}
 											else 
 											{
-												$additional_charges['survey_charge'] = $method_data->survey_charge;
 												$additional_charges['product_charge'] = $method_data->product_charge;
 												$additional_charges['gc_charge'] = $method_data->gc_charge;
 												$multiplier_fee     = Self::fix_multiplier($params["cash_out_amount"],$params['all_slot']);
@@ -563,7 +561,6 @@ class CashOut
 													$insert["cash_out_type"] 			        	= $params['type'];
 													$insert["cash_out_date"] 						= Carbon::now('Asia/Manila');
 													$insert["gc_charge"] 							= $params["gc_charge"];
-													$insert["survey_charge"] 						= $params["survey_charge"] * Self::survey_multiplier($params["all_slot"]);
 													$insert["product_charge"] 						= $params["product_charge"] * $multiplier_fee;
 													$insert['txnid'] 								= "PAYOUT".time();
 													$id = Tbl_cash_out_list::insertGetId($insert);
@@ -687,18 +684,7 @@ class CashOut
 
 		return $return;
 	}
-	public static function survey_multiplier($all_slot)
-	{
-		$for_survey = 0;
-			
-			foreach ($all_slot as $key => $value) {
-				if(isset($value['cash_out_amount']) && $value['initial_payout'] == 1){
-					
-					$for_survey++;
-				} 
-			}
-		return $for_survey;
-	}
+	
 	public static function all_slot_checker($slot_id,$params)
 	{
 		$multi=[];
@@ -800,7 +786,7 @@ class CashOut
 		if($payout_method)
 		{
 			$slot = Tbl_slot::where('slot_no', $data['slot_no'])->first();
-			$slot_owner = User::where('id', $slot->slot_owner)->first();
+			$slot_owner = Users::where('id', $slot->slot_owner)->first();
 
 			$pass['slot_id']							= $slot->slot_id;
 			$pass["cash_out_method_id"] 				= $payout_method->method_id;
@@ -1093,88 +1079,107 @@ class CashOut
 		return $return;
 	}
 
-	public static function update_transaction($params)
+	public static function update_transaction($params) 
 	{
-		// dd($params);
-		$transaction = Tbl_cash_out_list::where("cash_out_id", $params["transaction"]);
-		$first =  Tbl_cash_out_list::slot()->where("cash_out_id", $params["transaction"])->first();
-		
-		if($first)
-		{
-			$update["cash_out_method_message"] 					= $params["message"];
-			$update["sender_name"] 								= $params["sender"];
-			$update["control_number"] 							= $params["control_no"];
-			$update["receipt_thumbnail"] 						= $params["thumbnail"];
-			// $update["cash_out_amount_requested"] 				= $params["amount"];
+		$transactionQuery = Tbl_cash_out_list::where("cash_out_id", $params["transaction"]);
+		$first = Tbl_cash_out_list::slot()->where("cash_out_id", $params["transaction"])->first();
 
-			
-			if($params["amount"] <= 0)
-			{
-				$update["cash_out_method_fee"] 						= 0;
-				$update["cash_out_method_service_charge"] 			= 0;
-				$update["cash_out_net_payout"] 						= 0;
-				$update["cash_out_net_payout_actual"] 				= 0;
-				$update["cash_out_method_tax"] 						= 0;
-				$update["cash_out_amount_requested"] 				= 0;
-			}
-			else
-			{
-				$update["cash_out_amount_requested"] 				= $params["amount"];
+		if (!$first) {
+			return "Transaction not found";
+		}
 
-				$fees 			= Tbl_cash_out_method::where("cash_out_method_id", $first->cash_out_method_id)->first();
-				$tax 			= ($fees->cash_out_method_withholding_tax/100) * $params["amount"];
-				// $service        = ($params["amount"]-$tax) * ($fees->cash_out_method_service_charge/100);
-				$service        = $fees->cash_out_method_service_charge_type == 'percentage' ? (($params["amount"]-$tax) * ($fees->cash_out_method_service_charge/100)) : $fees->cash_out_method_service_charge;
+		$update = [
+			"cash_out_method_message" => $params["message"] ?? '',
+			"sender_name"             => $params["sender"] ?? '',
+			"control_number"          => $params["control_no"] ?? '',
+			"receipt_thumbnail"       => $params["thumbnail"] ?? '',
+		];
 
-				$update["cash_out_method_fee"] 						= $fees->cash_out_method_method_fee;
-				$update["cash_out_method_service_charge"] 			= $service;
-				$update["cash_out_method_tax"] 						= $tax;
-				
+		$amount = floatval($params["amount"] ?? 0);
 
-				$total_charge                                       = $fees->cash_out_method_method_fee +  $tax + $service + $fees->product_charge + $fees->gc_charge;
-				$fees->survey										= $first->initial_payout == 1 ?  $fees->survey_charge : 0;
-				$total_charge  										= $total_charge + $fees->survey;
-				$savings_percentage = $fees->savings_percentage;
-				if($fees->cash_out_method_charge_to == "inclusive")
-				{
-					// dd($params,$total_charge);
-					$update["cash_out_net_payout_actual"]           = $params["amount"];
-					$expected_receivable 	                = $params["amount"] - $total_charge;
+		if ($amount <= 0) {
+			// Zero or invalid amount
+			$update += [
+				"cash_out_amount_requested"       => 0,
+				"cash_out_method_fee"             => 0,
+				"cash_out_method_service_charge"  => 0,
+				"cash_out_net_payout"             => 0,
+				"cash_out_net_payout_actual"      => 0,
+				"cash_out_method_tax"             => 0,
+				"cash_out_savings"                => 0,
+			];
+		} else {
+			$update["cash_out_amount_requested"] = $amount;
+
+			$fees = Tbl_cash_out_method::where("cash_out_method_id", $first->cash_out_method_id)->first();
+
+			if ($fees) {
+				$tax = ($fees->cash_out_method_withholding_tax / 100) * $amount;
+
+				$service = $fees->cash_out_method_service_charge_type === 'percentage'
+					? ($amount - $tax) * ($fees->cash_out_method_service_charge / 100)
+					: $fees->cash_out_method_service_charge;
+
+				$update["cash_out_method_fee"] = $fees->cash_out_method_method_fee;
+				$update["cash_out_method_service_charge"] = $service;
+				$update["cash_out_method_tax"] = $tax;
+
+				$total_charge = $fees->cash_out_method_method_fee
+					+ $tax
+					+ $service
+					+ $fees->product_charge
+					+ $fees->gc_charge;
+
+				// Determine if this is the first payout
+				$is_initial = $first->initial_payout == 1;
+
+				// Inclusive vs Exclusive charges
+				if ($fees->cash_out_method_charge_to === "inclusive") {
+					$update["cash_out_net_payout_actual"] = $amount;
+					$expected_receivable = $amount - $total_charge;
+				} else {
+					$update["cash_out_net_payout_actual"] = $amount + $total_charge;
+					$expected_receivable = $amount;
 				}
-				else
-				{
-					$update["cash_out_net_payout_actual"]           = $params["amount"] + $total_charge;
-					$expected_receivable 	                = $params["amount"];
-				}
 
-				$savings 					= ($savings_percentage * $expected_receivable) / 100;
-				$expected_receivable		= $expected_receivable - $savings;
-				$update["cash_out_net_payout"]	= $expected_receivable;
-				$update["cash_out_savings"]	= $savings;
+				// Apply savings
+				$savings = ($fees->savings_percentage / 100) * $expected_receivable;
+				$expected_receivable -= $savings;
 
+				$update["cash_out_net_payout"] = $expected_receivable;
+				$update["cash_out_savings"] = $savings;
 			}
-			if($update["cash_out_net_payout_actual"] <= $first->cash_out_original_amount_deducted)
-			{
-				$transaction 										= $transaction->update($update);
-				$second =  Tbl_cash_out_list::slot()->where("cash_out_id", $params["transaction"])->first();
-				$user   = Request::user()->id;
-				$action = "Update Payout List";
-				Audit_trail::audit(serialize($first),serialize($second),$user,$action);
-				$schedule 											= Tbl_cash_out_schedule::where("schedule_id", $params["schedule"])->first();
-				if($schedule)
-				{
-					$update_payouts = Self::get_transactions_for_payout($schedule->schedule_date_from, $schedule->schedule_date_to, $first->cash_out_method_id ,$params["schedule"]);
-					Self::update_latest_schedule($update_payouts,$params["schedule"]);
-				}
+		}
+
+		// Ensure payout does not exceed original deducted amount
+		if ($update["cash_out_net_payout_actual"] <= $first->cash_out_original_amount_deducted) {
+			$transactionQuery->update($update);
+
+			// Audit trail
+			$second = Tbl_cash_out_list::slot()->where("cash_out_id", $params["transaction"])->first();
+			$user = Request::user()->id ?? 0;
+			Audit_trail::audit(serialize($first), serialize($second), $user, "Update Payout List");
+
+			// Update schedule
+			$schedule = Tbl_cash_out_schedule::where("schedule_id", $params["schedule"] ?? 0)->first();
+			if ($schedule) {
+				$update_payouts = self::get_transactions_for_payout(
+					$schedule->schedule_date_from,
+					$schedule->schedule_date_to,
+					$first->cash_out_method_id,
+					$params["schedule"]
+				);
+				self::update_latest_schedule($update_payouts, $params["schedule"]);
 			}
-			else 
-			{
-				$transaction 										= $transaction->first();
-			}
+		} else {
+			// If actual payout exceeds original deduction, return transaction without updating
+			$transactionQuery->first();
 		}
 
 		return "Success";
 	}
+
+
 
 	// public static function process_transaction($id, $sched_id)
 	// {
@@ -1253,7 +1258,7 @@ class CashOut
 		foreach ($list['list'] as $key => $value) {
 
 			$slot = Tbl_slot::where("slot_no" ,$value->cash_out_slot_code)->first();
-			$value->team_name = User::where("id",$slot->slot_owner)->first()->team_name;
+			$value->team_name = Users::where("id",$slot->slot_owner)->first()->team_name;
 		}
 		$list['total'] = Tbl_cash_out_list::Method()->where("schedule_id", $filter['id'])->sum('cash_out_net_payout');
 		return $list;
@@ -1564,12 +1569,6 @@ class CashOut
 		}
 		$total_charge = $total_charge + ($charges['gc_charge']/100)*$cash_out_amount;
 		$total_charge = ($charges['product_charge'] * $multiplier_fee) + $total_charge; 
-
-		if(isset($charges['survey_charge'])){
-			
-			$total_charge = $total_charge + ($charges['survey_charge'] * Self::survey_multiplier($all_slot));
-			
-		}
 		if($method_data->cash_out_method_method_fee > 0)
 		{
 

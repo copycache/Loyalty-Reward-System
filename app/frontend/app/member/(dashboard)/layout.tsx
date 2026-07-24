@@ -32,28 +32,21 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   LayoutDashboard,
-  Radio,
-  Trophy,
   FileText,
-  Award,
-  Megaphone,
   Wallet,
   ArrowDownToLine,
   ArrowUpFromLine,
   Lock,
   Network,
   Users,
-  Star,
-  Gift,
   ShoppingCart,
   Package,
   Settings,
   LogOut,
   ChevronDown,
   Bell,
-  Smartphone,
   BarChart3,
-  Play,
+  CreditCard,
 } from "lucide-react";
 
 interface MenuItem {
@@ -66,37 +59,15 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { title: "Dashboard", href: "/member/dashboard", icon: LayoutDashboard },
-  { title: "Live Stream", href: "/member/live-streaming", icon: Radio, moduleKey: "live_streaming", requiresFirstSlot: true },
-  { title: "Leaderboard", href: "/member/leaderboard", icon: Trophy, moduleKey: "leaderboard", requiresFirstSlot: true },
-];
-
-const earningsMenu: MenuItem[] = [
   { title: "Transaction Summary", href: "/member/earning", icon: FileText, moduleKey: "earnings" },
-  { title: "Marketing Materials", href: "/member/marketing-materials", icon: Megaphone, moduleKey: "ebooks", requiresFirstSlot: true },
-];
-
-const financeMenu: MenuItem[] = [
-  { title: "Top-up / Cash In", href: "/member/cashin", icon: ArrowDownToLine, moduleKey: "cashin", requiresFirstSlot: true },
-  { title: "Withdraw", href: "/member/cashout", icon: ArrowUpFromLine, moduleKey: "cashout", requiresFirstSlot: true },
+  { title: "Top-up", href: "/member/cash-in", icon: ArrowDownToLine, moduleKey: "cashin", requiresFirstSlot: true },
+  { title: "Withdraw", href: "/member/cash-out", icon: ArrowUpFromLine, moduleKey: "cashout", requiresFirstSlot: true },
   { title: "Code & Pin", href: "/member/codevault", icon: Lock, moduleKey: "coadevault" },
-];
-
-const networkMenu: MenuItem[] = [
   { title: "Genealogy", href: "/member/genealogy", icon: Network, moduleKey: "mynetwork" },
   { title: "Referrals", href: "/member/sponsor", icon: Users, moduleKey: "leads" },
-  { title: "Reward Points", href: "/member/reward-points", icon: Star, moduleKey: "reward_points" },
-  { title: "Incentive", href: "/member/incentive", icon: Gift, moduleKey: "incentive" },
-];
-
-const shopMenu: MenuItem[] = [
+  { title: "Investment", href: "/member/investment", icon: BarChart3 },
   { title: "E-commerce", href: "/member/shopping", icon: ShoppingCart, moduleKey: "shopping", requiresFirstSlot: true },
-  { title: "My Orders", href: "/member/order", icon: Package, moduleKey: "shopping", requiresFirstSlot: true },
-];
-
-const otherMenu: MenuItem[] = [
-  { title: "E-Loading", href: "/member/e-loading", icon: Smartphone },
-  { title: "Survey", href: "/member/survey", icon: BarChart3 },
-  { title: "Watch & Earn", href: "/member/watch-video", icon: Play },
+  { title: "My Order", href: "/member/order", icon: Package, moduleKey: "shopping", requiresFirstSlot: true },
 ];
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
@@ -202,119 +173,16 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Earnings</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filterMenu(earningsMenu).map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Finance</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filterMenu(financeMenu).map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Network</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filterMenu(networkMenu).map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Shop</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filterMenu(shopMenu).map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Other</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filterMenu(otherMenu).map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-
-        <SidebarFooter className="p-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/member/settings")}>
-                <Link href="/member/settings/profile">
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>

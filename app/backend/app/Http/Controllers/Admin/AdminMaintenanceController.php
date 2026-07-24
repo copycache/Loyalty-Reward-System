@@ -6,7 +6,7 @@ use App\Globals\Audit_trail;
 use App\Globals\Seed;
 use App\Globals\Log;
 
-use App\Models\User;
+use App\Models\Users;
 use App\Models\Tbl_currency;
 use App\Models\Tbl_label;
 use App\Models\Tbl_wallet_log;
@@ -14,17 +14,16 @@ use App\Models\Tbl_mlm_plan;
 use App\Models\Tbl_slot;
 use App\Models\Tbl_other_settings;
 use App\Models\Tbl_adjust_wallet_log;
-use App\Models\Tbl_dragonpay_settings;
 
-use Illuminate\Support\Facades\DB;
+use DB;
 use Excel;
-use Illuminate\Support\Facades\Request;
+use Request;
 use App\Globals\Slot;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Validator;
+use Validator;
 use Hash;
 use Crypt;
-use Illuminate\Support\Facades\Session;
+use Session;
 
 class AdminMaintenanceController extends AdminController
 {
@@ -40,10 +39,6 @@ class AdminMaintenanceController extends AdminController
 		Seed::other_settings_seed();
 		$response = null;
 		$return   = Tbl_other_settings::get();
-		// foreach ($return as $key => $value) 
-		// {
-		// 	$response[$value->key] = $value->value;
-		// }
 		$response = $return;
 		return Response()->json($response);
 	}
@@ -53,19 +48,7 @@ class AdminMaintenanceController extends AdminController
 	{
 		foreach (Request::input() as $key => $value) 
 		{
-			if($value['key'] == 'slot_transfer')
-			{
-				$update['value'] = $value['value'];
-			}
-			else if($value['key'] == 'default_slot_limit')
-			{
-				$update['value'] = $value['value'];
-			}
-			else if($value['key'] == 'max_retailer')
-			{
-				$update['value'] = $value['value'];
-			}
-			else if($value['key'] == 'dealers_bonus')
+			if($value['key'] == 'default_slot_limit')
 			{
 				$update['value'] = $value['value'];
 			}
@@ -277,7 +260,7 @@ class AdminMaintenanceController extends AdminController
 
 	public function get_admin()
 	{
-		$return = User::JoinPosition()->where('type','admin')->get();
+		$return = Users::JoinPosition()->where('type','admin')->get();
 
 
 		foreach ($return as $key => $value) 
@@ -310,345 +293,6 @@ class AdminMaintenanceController extends AdminController
 		return $return;
 	}
 
-	public function import_member()
-	{
-		$rowCount 			= Request::input('row_count');
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows = $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] = $check_rows->where('slot_no', '!=', null)->count();
-			$return['current'] = 0;
-			return response()->json($return);
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			
-			if(isset($data[$row_count]))
-			{
-				Slot::import_members($data[$row_count]);
-			
-				$row_count = $row_count + 1;
-				$return['current'] = $row_count;
-				return response()->json($return);
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Member";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
-	
-	}
-
-	public function import_member_slot()
-	{
-		$rowCount 			= Request::input('row_count');
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows = $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] = $check_rows->where('slot_code', '!=', null)->count();
-			$return['current'] = 0;
-			return response()->json($return);
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			if(isset($data[$row_count]))
-			{
-				$slot_response = Slot::import_member_slot($data[$row_count]);
-				if($slot_response)
-				{
-					$row_count = $row_count + 1;
-					$return['response'] = $slot_response;
-					$return['current'] = $row_count;
-					return response()->json($return);
-				}
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Member Slot";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
-	
-	}
-
-	public function import_placement()
-	{
-		$rowCount 			= Request::input('row_count');
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows = $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] = $check_rows->where('slot_code', '!=', null)->count();
-			$return['current'] = 0;
-			return response()->json($return);
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			if(isset($data[$row_count]))
-			{	
-				Slot::place_imported_slots($data[$row_count]);
-				$row_count = $row_count + 1;
-				$return['current'] = $row_count;
-				return response()->json($return);
-				
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Placement";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
-	}
-
-	public function import_custom_member()
-	{
-		$rowCount 			= Request::input('row_count');
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows = $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] = $check_rows->where('full_name', '!=', null)->count();
-			$return['current'] = 0;
-			return response()->json($return);
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$count 			= $data->where('full_name', '!=', null)->count();
-			if(isset($data[$row_count]))
-			{
-				$return['response'] = Slot::import_custom_member($data[$row_count],$count);
-				$row_count = $row_count + 1;
-				$return['current'] = $row_count;
-				return response()->json($return);
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Custom Member";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
-	
-	}
-	
-	
-	public function import_slots()
-	{
-		$rowCount 			= Request::input('row_count');
-
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows = $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] 				= $check_rows->count();
-			$return['current'] 				= 0;
-
-			DB::table("tbl_importation_data")->delete();
-
-			$insert["importation_data"] = serialize($_data);
-			DB::table("tbl_importation_data")->insert($insert);
-
-			return response()->json($return);
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= unserialize(DB::table("tbl_importation_data")->first()->importation_data);
-
-			if(isset($data[$row_count]))
-			{
-				$import_settings["rematrix"]	 		= Request::input("rematrix");	
-				$import_settings["reentry"]		 		= Request::input("reentry");
-				$import_settings["reset_wallet"] 		= Request::input("reset_wallet");	
-				$import_settings["reset_points"] 		= Request::input("reset_points");
-				$import_settings["create_if_not_exist"] = Request::input("create_if_not_exist");
-
-				$process = Slot::import_slots($data[$row_count],$import_settings);
-
-				$return['process_returned']                  = $process["process_returned"];
-
-				$return['finished_data']["slot_no"]          = $data[$row_count]["slot_no"];
-				$return['finished_data']["email"]            = $data[$row_count]["email"];
-				$return['finished_data']["first_name"]       = $data[$row_count]["first_name"];
-				$return['finished_data']["middle_initial"]   = $data[$row_count]["middle_initial"];
-				$return['finished_data']["last_name"]        = $data[$row_count]["last_name"];
-				$return['finished_data']["sponsor"]          = $data[$row_count]["sponsor"];
-				$return['finished_data']["placement"]        = $data[$row_count]["placement"];
-				$return['finished_data']["position"]         = $data[$row_count]["position"];
-				$return['finished_data']["status"]           = $process["process_returned"];
-
-				if($process["process_returned"] == "Success")
-				{
-					$return['finished_data']["status_message"]  = "----";
-				}
-				else
-				{
-					$append = "";
-					$total  = count($process["process_message"]);
-
-					$ctr    = 1;
-
-					foreach($process["process_message"] as $process_message)
-					{
-						if($total == 1)
-						{
-							$append = $append . $process_message;
-						}
-						else
-						{
-							if($ctr == $total)
-							{
-								$append = $append.$process_message;
-							}
-							else
-							{
-								$append = $append.$process_message."</br>";
-							}
-						}
-
-						$ctr++;
-					}
-
-					$return['finished_data']["status_message"] = $append;
-				}
-
-				
-				$row_count 			= $row_count + 1;
-				$return['current']  = $row_count;
-
-				return response()->json($return);
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Slot";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-				
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
-	
-	}
-
-	public function get_cms_list()
-	{
-		if(Request::input('image_id') != null && Request::input('delete') != null)
-		{
-			DB::table('tbl_images')->where('image_id',Request::input('image_id'))->update(['archived'=>1]);
-		}
-
-		$response =DB::table('tbl_images')->where('archived',0);
-		if(Request::input('image_type') != null)
-		{
-			$response = $response->where('image_type',Request::input('image_type'));
-		}
-		$response = $response->get();
-
-		return response()->json($response, 200);
-	}
-
-	public function cms_image_submit()
-	{
-		$data = Request::all();
-
-		foreach ($data['image'] as $key => $value) 
-		{
-			$image['image_type']        = $data['image_type'];
-			$image['image_path'] 		= $value;
-			$image['image_description'] = $data['description'][$key];
-			DB::table('tbl_images')->insert($image);
-		}
-
-		$user   	= Request::user()->id;
-		$action 	= "Import CMS Image";
-		$new_value 	= $value;
-		Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-		$response['status'] = "SUCCESS";
-		$response['message'] = "SUCCESSFULLY UPLOADED";
-		return response()->json($response,200);
-	}
-
-	public function update_gc()
-	{
-		$user   = Request::user()->id;
-		$action = "GC Updated"; 
-		$data = Request::input();
-		$update['amount_required'] = $data['amount_required'];
-		$update['amount_deducted'] = $data['amount_deducted'];
-		$update['amount_given'] = $data['amount_given'];
-		$update['status'] = $data['status'];
-
-		$check_if_existing = DB::table('tbl_gc_maintenance')->first();
-		if($check_if_existing)
-		{
-			$old_value = DB::table('tbl_gc_maintenance')->where('gc_maintenance_id', 1)->first();
-			DB::table('tbl_gc_maintenance')->where('gc_maintenance_id', 1)->update($update);
-			$new_value = DB::table('tbl_gc_maintenance')->where('gc_maintenance_id', 1)->first();
-			Audit_trail::audit(serialize($old_value),serialize($new_value),$user,$action);
-		}
-		else
-		{
-			DB::table('tbl_gc_maintenance')->insert($update);
-			$new_value = DB::table('tbl_gc_maintenance')->where('gc_maintenance_id', 1)->first();
-			Audit_trail::audit(null,serialize($new_value),$user,$action);
-		}
-
-		$return['status_message'] = "Successfully Updated";
-		$return['status'] = "Success";
-
-		return response()->json($return,200);
-	}
-
-	public function load_gc()
-	{
-		$return = DB::table('tbl_gc_maintenance')->first();
-		return response()->json($return);
-
-	}
-
 	public function save_logo()
 	{
 		$check = DB::table('tbl_company_details')->first();
@@ -675,43 +319,6 @@ class AdminMaintenanceController extends AdminController
 			$return['status'] = "error";
 		}
 
-		return response()->json($return);
-	}
-
-	public function import_adjust_wallet()
-	{
-		$rowCount 			= Request::input('row_count');
-		if($rowCount == 'null')
-		{
-			$file         					= Request::file('file_data')->getRealPath();
-			$check_rows 		        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$return['total'] = $check_rows->where('slot_code', '!=', null)->count();
-			$return['current'] = 0;
-		}
-		else
-		{
-			$row_count 		= intval($rowCount);
-			$file         	= Request::file('file_data')->getRealPath();
-			$data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-			$data           = $data->where('slot_code', '!=', null);
-			if(isset($data[$row_count]))
-			{	
-				Self::adjust_wallet($data[$row_count]);
-				$row_count = $row_count + 1;
-				$return['current'] = $row_count;
-			}
-			else
-			{
-				$user   	= Request::user()->id;
-				$action 	= "Import Adjust Wallet";
-				$new_value 	= $file;
-				Audit_trail::audit(null,serialize($new_value),$user,$action);
-
-				$return["status"]         = "success"; 
-				$return["status_code"]    = 200; 
-				$return["status_message"] = "IMPORTED SUCCESSFULLY";
-			}
-		}
 		return response()->json($return);
 	}
 
@@ -839,59 +446,7 @@ class AdminMaintenanceController extends AdminController
 			$return["status_message"] = "No Plan Trigger";
     	}
 	}
-	public function load_dragonpay_settings()
-	{
-		return Tbl_dragonpay_settings::first();
-	}
-	public function update_dragonpay()
-	{
-		$data  																= Request::all();
-		$rules["merchant_id"]    											= "required";
-		$rules["merchant_password"]    										= "required";
-		$rules["mode"]   													= "required";
-		$rules["service_charged"]   										= "required";
 
-		
-		$validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) 
-        {
-            $return["status"]         										= "error"; 
-			$return["status_code"]    										= 400; 
-			$return["status_message"] 										= [];
-
-			$i = 0;
-			$len = count($validator->errors()->getMessages());
-
-			foreach ($validator->errors()->getMessages() as $key => $value) 
-			{
-				foreach($value as $val)
-				{
-					$return["status_message"][$i] = $val;
-
-				    $i++;		
-				}
-			}
-        }
-		else {
-			DB::table('tbl_dragonpay_settings')->updateOrInsert(
-					 [
-					 	'id'				=> 1,
-					 ],
-					 [
-					 	'merchant_id' 		=> Request::input('merchant_id'), 
-					 	'merchant_password' => Request::input('merchant_password'), 
-					 	'mode' 				=> Request::input('mode'),
-					 	'service_charged' 	=> Request::input('service_charged'),
-					 	'updated_at' 		=> Carbon::now()
-					 ]);
-
-			$return["status"]         = "success"; 
-			$return["status_code"]    = 200; 
-			$return["status_message"] = 'Dragonpay Settings Successfully Updated';
-		}
-		return $return;
-	}
 	public function get_user_details()
 	{
 		return	Request::user()->id;

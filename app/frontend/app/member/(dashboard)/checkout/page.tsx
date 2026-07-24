@@ -26,7 +26,7 @@ export default function MemberCheckoutPage() {
 
   const loadCart = async () => {
     try {
-      const res = await apiPost("/api/cart/get_cart_items", { slot_owner: currentSlot?.slot_owner }, token);
+      const res = await apiPost<any>("/api/cart/get_cart_items", { slot_owner: currentSlot?.slot_owner }, token);
       if (res?.data) setCart(Array.isArray(res.data) ? res.data : []);
       else setCart([]);
     } catch {
@@ -40,7 +40,7 @@ export default function MemberCheckoutPage() {
       try {
         const [, addrRes] = await Promise.all([
           loadCart(),
-          apiPost("/api/settings/get_addresses", {}, token),
+          apiPost<any>("/api/settings/get_addresses", {}, token),
         ]);
         if (addrRes?.data) {
           setAddresses(Array.isArray(addrRes.data) ? addrRes.data : []);
@@ -99,7 +99,7 @@ export default function MemberCheckoutPage() {
     }
     setSubmitting(true);
     try {
-      const res = await apiPost("/api/simple_checkout", {
+      const res = await apiPost<any>("/api/simple_checkout", {
         payment_method: paymentMethod,
         address_id: selectedAddress,
         slot_id: currentSlot?.slot_id,

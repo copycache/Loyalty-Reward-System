@@ -1,30 +1,36 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblBank extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_bank', function (Blueprint $table) {
-            $table->id('bank_id');
+        Schema::create('tbl_bank', function (Blueprint $table) 
+        {
+            $table->increments('bank_id');
             $table->string('bank_name');
             $table->tinyInteger('bank_payout_enable')->default(0);
             $table->dateTime('bank_date_created');
             $table->tinyInteger('archive')->default(0);
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_bank');
+        //
     }
-};
+}

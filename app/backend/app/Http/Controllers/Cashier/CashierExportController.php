@@ -1,44 +1,50 @@
 <?php
-
 namespace App\Http\Controllers\Cashier;
 
-use App\Exports\ViewExport;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
 use PDF;
-
+use Excel;
+use DB;
+use Carbon\Carbon;
+use Request;
 class CashierExportController extends CashierController
 {
     public function export_sales_report($ref)
     {
-        $data = CashierItemController::load_sales_report(1);
-        
-        if ($ref == 'pdf') {
-            $pdf = PDF::loadView('export.pdf.cashierSalesReport', ['_list' => $data]);
+        $data 	= CashierItemController::load_sales_report(1);
+        if($ref=="pdf")
+        {
+            $pdf['_list']  = $data;
+            $pdf = PDF::loadView('export.pdf.cashierSalesReport', $pdf);
             return $pdf->stream('salesreport.pdf');
         }
-
-        return Excel::create('CashierSalesReport', function($excel) use ($data) {
-            $excel->sheet('Sales Report', function($sheet) use ($data) {
-                $sheet->setOrientation('landscape');
-                $sheet->loadView('export.excel.cashierSalesReportxls', ['_list' => $data]);
-            });
-        })->export('xls');
+        else
+        {
+            $xls['_list'] = $data;
+            Excel::create("CashierSalesReport" ,function($excel) use ($xls)
+            {
+                $excel->sheet("Sales Report", function($sheet) use ($xls)
+                {
+                    $sheet->setOrientation('landscape');
+                    $sheet->loadView('export.excel.cashierSalesReportxls', $xls);
+                });
+            
+            })->export('xls');
+        }
     }
 
-    public function export_list_of_codes(Request $request, $ref)
+    public function export_list_of_codes($ref)
     {
-        $data = CashierItemController::load_list_of_codes(
-            $request->input('filter'),
-            $request->input('status'),
-            $request->input('search'),
-            $request->input('paginate')
-        );
+        $membership = Request::input('filter');
+		$status = Request::input('status');
+		$search = Request::input('search');
+		$paginate = Request::input('paginate');
+        $data = CashierItemController::load_list_of_codes($membership, $status, $search, $paginate);
 
-        if ($ref == 'pdf') {
-            $pdf = PDF::loadView('export.pdf.cashierListOfCodes', ['_list' => $data['code_list']]);
+        if($ref=="pdf")
+        {
+            $pdf['_list']  = $data['code_list'];
+
+            $pdf = PDF::loadView('export.pdf.cashierListOfCodes', $pdf);
             return $pdf->stream('listofcodes.pdf');
         }
     }

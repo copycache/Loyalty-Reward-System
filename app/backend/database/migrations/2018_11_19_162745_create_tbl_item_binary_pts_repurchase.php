@@ -1,18 +1,22 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblItemBinaryPtsRepurchase extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        if (!Schema::hasColumn('tbl_item', 'item_binary_pts')) {
-            Schema::table('tbl_item', function (Blueprint $table) {
+        if(!Schema::hasColumn('tbl_item', 'item_binary_pts'))
+        {
+            Schema::table('tbl_item', function (Blueprint $table) 
+            {
                 $table->double('item_binary_pts')->default(0);
             });
         }
@@ -20,11 +24,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::table('tbl_item', function (Blueprint $table) {
-            $table->dropColumn('item_binary_pts');
-        });
+        //
     }
-};
+}

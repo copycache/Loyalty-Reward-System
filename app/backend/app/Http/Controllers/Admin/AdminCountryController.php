@@ -3,7 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Globals\Country;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 
 class AdminCountryController extends AdminController
 {

@@ -3,22 +3,44 @@ namespace App\Http\Controllers\Admin;
 use App\Globals\Audit_trail;
 use App\Globals\Plan;
 use App\Globals\Currency;
-use App\Models\Tbl_currency;
 use App\Models\Tbl_investment_package;
 use App\Models\Tbl_membership;
-use App\Models\Tbl_membership_upgrade_settings;
 use App\Models\Tbl_investment_amount;
 use App\Models\Tbl_mlm_plan;
 use App\Models\Tbl_wallet_log;
 use App\Models\Tbl_earning_log;
 use App\Models\Tbl_label;
+use App\Models\Tbl_membership_upgrade_settings;
 
-use Illuminate\Support\Facades\DB;
 
-use Illuminate\Support\Facades\Request;
+use DB;
+
+use Request;
 use App\Globals\Investment;
 class AdminPlanController extends AdminController
 {
+	public function update_membership_upgrade()
+	{
+		$data = Request::input('data');
+		$settings = Request::input('settings');
+		$id       = Tbl_membership_upgrade_settings::first()->membership_upgrade_settings_id;
+		foreach($data as $key => $value)
+		{
+			$update['required_directs'] 		= $value['required_directs'];
+			$update['required_downlines'] 		= $value['required_downlines'];
+			$update['required_upgrade_points'] 	= $value['required_upgrade_points'];
+			$update['given_upgrade_points'] 	= $value['given_upgrade_points'];
+			DB::table('tbl_membership')->where('membership_id', $value['membership_id'])->update($update);
+		}
+		// dd($settings);
+		$update2["membership_upgrade_settings_method"] = $settings['membership_upgrade_settings_method'];
+		// $update2["membership_upgrade_settings_flushout"] = $settings['membership_upgrade_settings_flushout'];
+		Tbl_membership_upgrade_settings::where("membership_upgrade_settings_id",$id)->update($update2);
+		$return = Plan::update_status("MEMBERSHIP_UPGRADE",1);
+
+		return response()->json($return);
+	}
+
     public function get() 
 	{
 		
@@ -35,32 +57,6 @@ class AdminPlanController extends AdminController
 		$trigger  = Request::input("trigger");
 		$response = Plan::update($plan,$label,$data,$trigger);
 	    return response()->json($response, 200);
-	}
-
-	public function update_board()
-	{
-		$boardInfo = Request::input('boardInfo');
-		$logic = $boardInfo['logic'];
-		$levels = $boardInfo['levels'];
-		$depth  = $boardInfo['depth'];
-		$graduationBonus = Request::input('gradBonus');
-		// if(!$levels)
-		// {
-		// 	$return["status_message"]  = ""; 
-		// 	$return["status"]         = "success"; 
-		// 	$return["status_code"]    = 201; 
-		// }
-
-		if($logic == 'fifo')
-		{
-			DB::table('tbl_mlm_plan')->where('mlm_plan_code', 'BOARD')->update(['mlm_plan_trigger' => 'Slot Creation']);
-		}
-		else
-		{
-			DB::table('tbl_mlm_plan')->where('mlm_plan_code', 'BOARD')->update(['mlm_plan_trigger' => 'Slot Placement']);
-		}
-		$response = Plan::update_board($levels,$depth,$graduationBonus);
-		return response()->json($response);
 	}
 
     public function update_status() 
@@ -137,83 +133,6 @@ class AdminPlanController extends AdminController
 		return response()->json($response, 200);
 	}
 
-	public function load_board_settings()
-	{
-		$data = DB::table('tbl_mlm_board_settings')->get();
-		foreach($data as $key => $value)
-		{
-			$return['board_depth'] = $value->board_depth;
-			$return['graduation_bonus'][$key] = $value->graduation_bonus;
-			$return['board_logic'] = $value->board_logic;
-		}
-		$return['board_levels'] = count($data);
-		return $return;
-	}
-
-	public function update_membership_upgrade()
-	{
-		$data = Request::input('data');
-		$settings = Request::input('settings');
-		$id       = Tbl_membership_upgrade_settings::first()->membership_upgrade_settings_id;
-		foreach($data as $key => $value)
-		{
-			$update['required_directs'] 		= $value['required_directs'];
-			$update['required_downlines'] 		= $value['required_downlines'];
-			$update['required_upgrade_points'] 	= $value['required_upgrade_points'];
-			$update['given_upgrade_points'] 	= $value['given_upgrade_points'];
-			DB::table('tbl_membership')->where('membership_id', $value['membership_id'])->update($update);
-		}
-		// dd($settings);
-		$update2["membership_upgrade_settings_method"] = $settings['membership_upgrade_settings_method'];
-		// $update2["membership_upgrade_settings_flushout"] = $settings['membership_upgrade_settings_flushout'];
-		Tbl_membership_upgrade_settings::where("membership_upgrade_settings_id",$id)->update($update2);
-		$return = Plan::update_status("MEMBERSHIP_UPGRADE",1);
-
-		return response()->json($return);
-	}
-	public function update_sign_up_bonus()
-	{
-		$plan 	  = Request::input("plan"); 
-		$label    = Request::input("label");
-		Plan::update_label($plan,$label);
-		$data = Request::input('data');
-		foreach($data as $key => $value)
-		{
-			$new_value  = Tbl_membership::where('membership_id', $value['membership_id'])->first();
-			$update['sign_up_bonus'] 		= $value['sign_up_bonus'];
-			$update['sign_up_minimum'] 		= $value['sign_up_minimum'];
-			$update['sign_up_voucher_use'] 	= $value['sign_up_voucher_use'];
-
-			DB::table('tbl_membership')->where('membership_id', $value['membership_id'])->update($update);
-
-			$old_value  = Tbl_membership::where('membership_id', $value['membership_id'])->first();
-			$action     = "Update Sign Up Bonus";
-			$user       = Request::user()->id;
-			Audit_trail::audit(serialize($old_value),serialize($new_value),$user,$action);
-		}
-		$return = Plan::update_status("SIGN_UP_BONUS",1);
-
-		return response()->json($return);
-	}
-	public function update_personal_cashback()
-	{
-		$data = Request::input('data');
-		foreach($data as $key => $value)
-		{
-			$new_value  = Tbl_membership::where('membership_id', $value['membership_id'])->first();
-			$update['cashback_percent'] = $value['cashback_percent'];
-
-			DB::table('tbl_membership')->where('membership_id', $value['membership_id'])->update($update);
-
-			$old_value  = Tbl_membership::where('membership_id', $value['membership_id'])->first();
-			$action     = "Update Personal Cashback";
-			$user       = Request::user()->id;
-			Audit_trail::audit(serialize($old_value),serialize($new_value),$user,$action);
-		}
-		$return = Plan::update_status("PERSONAL_CASHBACK",1);
-
-		return response()->json($return);
-	}
 	public function get_investment_amount()
 	{
 		$response = Tbl_investment_amount::first();
@@ -251,49 +170,5 @@ class AdminPlanController extends AdminController
 		}
 		return $return;
 	}
-	public function update_retailer_commission()
-	{
-
-		$label								 = Request::input('label');
-		$commission							 = Request::input('commission');
-		$get_old_label						 = Tbl_label::where('plan_code', 'RETAILER_COMMISSION')->first();
-		$update_plan["mlm_plan_enable"]		 = 1;
-
-		Plan::update_label('RETAILER_COMMISSION',$label);
-		Tbl_mlm_plan::where("mlm_plan_code",'RETAILER_COMMISSION')->update($update_plan);
-		Tbl_wallet_log::where('wallet_log_details',$get_old_label->plan_name)->update(['wallet_log_details' => $label]);
-
-		foreach ($commission as $key => $value) 
-		{
-			Tbl_membership::where('membership_id',$value['membership_id'])->update(['retailer_commission' => $value['retailer_commission']]);
-		}
-
-		$return['status'] 					= 'Success';
-		$return['status_message']			= 'Retailer Commission updated sucessfully';
-		return $return;
-
-	}
-	public function update_share_link_v2()
-	{
-		$data													= Request::input('data');
-		$label													= Request::input('label');
-		$old_label 												= Tbl_label::where('plan_code','SHARE_LINK_V2')->first()->plan_name;
-
-		Tbl_earning_log::where('earning_log_plan_type',$old_label)->update(['earning_log_plan_type' => $label]);
-		Tbl_wallet_log::where('wallet_log_details',$old_label)->update(['wallet_log_details' => $label]);
-		Tbl_label::where('plan_code','SHARE_LINK_V2')->update(['plan_name' => $label]);
-
-		foreach ($data as $key => $value) 
-		{
-			$update['share_link_maximum_income'] 				= $value['share_link_maximum_income'];
-			$update['share_link_maximum_register_per_day'] 		= $value['share_link_maximum_register_per_day'];
-			$update['share_link_income_per_registration'] 		= $value['share_link_income_per_registration'];
-			
-			Tbl_membership::where('membership_id',$value['membership_id'])->update($update);
-		}
-
-		$return['status'] 					= 'Success';
-		$return['status_message']			= 'Plan Updated';
-		return $return;
-	}
+	
 }

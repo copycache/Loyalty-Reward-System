@@ -1,17 +1,12 @@
 <?php
 namespace App\Globals;
 use App\Globals\Audit_trail;
-use App\Models\User;
+use App\Models\Users;
 use App\Models\Tbl_slot;
-use App\Models\Tbl_currency;
-use App\Models\Tbl_wallet;
 use App\Models\Tbl_slot_limit;
-use App\Models\Tbl_codes;
 use App\Models\Tbl_cashier;
 use App\Models\Tbl_slot_code_change_logs;
 use App\Models\Tbl_other_settings;
-use App\Models\Tbl_dealer;
-use App\Models\Tbl_retailer;
 use App\Models\Tbl_binary_settings;
 use App\Models\Tbl_binary_projected_income_log;
 use App\Models\Tbl_tree_placement;
@@ -23,17 +18,12 @@ use Hash;
 use Request;
 use App\Globals\Slot;
 use App\Models\Tbl_binary_points;
-use App\Models\Tbl_earning_log;
-use App\Models\Tbl_leaders_support_log;
-use App\Models\Tbl_marketing_support_log;
-use App\Models\Tbl_milestone_bonus_settings;
-use App\Models\Tbl_tree_sponsor;
 
 class Member
 {
 	public static function get($type = "member", $search = null, $member_active = null)
 	{
-		// $return = User::where("type",$type)->where('id','!=',Request::user()->id);
+		// $return = Users::where("type",$type)->where('id','!=',Request::user()->id);
 
 		// if(isset($search))
 		// {
@@ -44,7 +34,7 @@ class Member
 		
 		// return $return;
 
-		$return = User::where("type",$type)->where('users.id','!=',Request::user()->id)
+		$return = Users::where("type",$type)->where('users.id','!=',Request::user()->id)
 				->where('name','!=','Administrator')
 				->leftjoin('tbl_slot','tbl_slot.slot_owner','users.id')
 				->where('tbl_slot.slot_no','!=','root')
@@ -152,33 +142,8 @@ class Member
 			$rules2["contact"]		= "required|regex:/^[0-9]*$/|size:11";
 			$rules4["slot_referral"] 				= "required|exists:tbl_slot,slot_no";
 		}
-		else
-		{
-			$rules["social_id"] = "unique:users,social_id";
-		}
-
-		if(isset($data["dealer_code"]))
-		{
-			$dealer = Tbl_dealer::where("dealer_code",$data["dealer_code"])->first();
-			if($dealer)
-			{
-				$max_retailer = Tbl_other_settings::where("key","max_retailer")->first() ? Tbl_other_settings::where("key","max_retailer")->first()->value : 0;
-				$count = Tbl_retailer::where("dealer_slot_id",$dealer->slot_id)->count();
-				if($count >= $max_retailer)
-				{
-					$dealers_error = "Dealer already reached the limit of registered retailer.";
-				}
-				else
-				{
-					$insert["registered_as_retailer"] = 1;
-				}
-			}
-			else
-			{
-				$dealers_error = "Dealer's link not found...";
-			}
-		}
-		$check_if_fullname_exist = User::where("first_name",$data["first_name"])->where("middle_name",$data["middle_name"])->where("last_name",$data["last_name"])->first();
+		
+		$check_if_fullname_exist = Users::where("first_name",$data["first_name"])->where("middle_name",$data["middle_name"])->where("last_name",$data["last_name"])->first();
 		$check_other_setting = Tbl_other_settings::where("key","allow_duplicated_name")->first() ? Tbl_other_settings::where("key","allow_duplicated_name")->first()->value : $check_other_setting = null;
 		$validator = Validator::make($data, $rules, $messages);
 		$validator2 = Validator::make($data, $rules2, $messages2);
@@ -228,14 +193,6 @@ class Member
 				}
 			}
 		}
-		else if(isset($dealers_error))
-		{
-			$return["status"]            = "error";
-			$return["status_code"]       = 400;
-			$return["status_message"]    = [];
-
-			$return["status_message"][0] = $dealers_error;
-		}
 		else if($check_other_setting == 0 && $check_if_fullname_exist != null)
 		{
 				$return["status"]            = "error";
@@ -275,7 +232,7 @@ class Member
 				$insert["password"]					= Hash::make($data["social_id"]);
 			}
 
-			$status_data_id = User::insertGetId($insert);
+			$status_data_id = Users::insertGetId($insert);
 			$slot_limit     = Tbl_other_settings::where("key","default_slot_limit")->first() ? Tbl_other_settings::where("key","default_slot_limit")->first()->value : 0;
 			$insert_limit["user_id"] 		  = $status_data_id;
 			$insert_limit["active_slots"]	  = 0;
@@ -288,34 +245,24 @@ class Member
 				if($slot_id )
 				{
 					$item_id = $data['slot_link'] != "referral" ? $data['item_id'] : null;
-					Slot::create_blank_slot($status_data_id,$slot_id,$data['slot_link'],0,0,$data["username"],$item_id);
-					goto already_create;
-				}
-			}
-			else if(isset($data["dealer_code"]))
-			{
-				$dealer_code = isset($data["dealer_code"]) ? $data["dealer_code"] : 0;
-
-				if($dealer_code)
-				{
-					Slot::create_blank_slot($status_data_id,0,0,0,$dealer_code);
+					Slot::create_blank_slot($status_data_id,$slot_id,$data['slot_link'],0,$data["username"],$item_id);
 					goto already_create;
 				}
 			}
 			else
 			{
-				Slot::create_blank_slot($status_data_id,0,null,0,0,$data["username"],null);
+				Slot::create_blank_slot($status_data_id,0,null,0,$data["username"],null);
 			}
 
 
 			already_create:
-			$status_data_name = User::where('id',$status_data_id)->first();
+			$status_data_name = Users::where('id',$status_data_id)->first();
 
 			//audit trail
 			if(isset($data['user']))
 			{
 				$action = 'Create Member';
-				$member = User::where('id',$status_data_id)->first();
+				$member = Users::where('id',$status_data_id)->first();
 				Audit_trail::audit(null,serialize($member),$data['user']['id'],$action);
 			}
 
@@ -332,7 +279,7 @@ class Member
 
 	public static function check_credentials($member)
 	{
-		$password = User::where("social_id", $member)->first();
+		$password = Users::where("social_id", $member)->first();
 		if($password)
 		{
 			return Crypt::decryptString($password->crypt);
@@ -436,7 +383,7 @@ class Member
 		$cashier = Tbl_cashier::where('cashier_user_id', Request::user()->id)->first();
 		if($cashier->cashier_position == 'Manager')
 		{
-			$cashier_user 		= User::where('id', $cashier->cashier_user_id)->first();
+			$cashier_user 		= Users::where('id', $cashier->cashier_user_id)->first();
 			$encrypted_password = Crypt::decryptString($cashier_user->crypt);
 			if($encrypted_password == $password)
 			{
@@ -479,7 +426,7 @@ class Member
 
 	public static function slot_info($type = "member", $search = null)
 	{
-		$query = User::where(function($two)  use ($type) {$two->where('type', $type)->orWhere('type','=','admin');});
+		$query = Users::where(function($two)  use ($type) {$two->where('type', $type)->orWhere('type','=','admin');});
 
 		if(isset($search))
 		{
@@ -495,7 +442,7 @@ class Member
 	{
 		if($id)
 		{
-			$response = User::where('id',$id)->first()->id;
+			$response = Users::where('id',$id)->first()->id;
 		}
 		return $response;
 	}
@@ -526,7 +473,7 @@ class Member
 			$update['valid_id'] = 'https://image.flaticon.com/icons/svg/71/71619.svg';
 		}
 
-		User::where('id', $data['id'])->update($update);
+		Users::where('id', $data['id'])->update($update);
 
 		$response['status'] = 'success';
 		$response['id'] = $data['id'];
@@ -590,28 +537,7 @@ class Member
 			$rules["social_id"] = "unique:users,social_id";
 		}
 
-		if(isset($data["dealer_code"]))
-		{
-			$dealer = Tbl_dealer::where("dealer_code",$data["dealer_code"])->first();
-			if($dealer)
-			{
-				$max_retailer = Tbl_other_settings::where("key","max_retailer")->first() ? Tbl_other_settings::where("key","max_retailer")->first()->value : 0;
-				$count = Tbl_retailer::where("dealer_slot_id",$dealer->slot_id)->count();
-				if($count >= $max_retailer)
-				{
-					$dealers_error = "Dealer already reached the limit of registered retailer.";
-				}
-				else
-				{
-					$insert["registered_as_retailer"] = 1;
-				}
-			}
-			else
-			{
-				$dealers_error = "Dealer's link not found...";
-			}
-		}
-		$check_if_fullname_exist = User::where("first_name",$data["first_name"])->where("middle_name",$data["middle_name"])->where("last_name",$data["last_name"])->first();
+		$check_if_fullname_exist = Users::where("first_name",$data["first_name"])->where("middle_name",$data["middle_name"])->where("last_name",$data["last_name"])->first();
 		$check_other_setting = Tbl_other_settings::where("key","allow_duplicated_name")->first() ? Tbl_other_settings::where("key","allow_duplicated_name")->first()->value : $check_other_setting = null;
 		$validator = Validator::make($data, $rules, $messages);
 		$validator2 = Validator::make($data, $rules2, $messages2);
@@ -640,14 +566,6 @@ class Member
 					$i++;
 				}
 			}
-		}
-		else if(isset($dealers_error))
-		{
-			$return["status"]            = "error";
-			$return["status_code"]       = 400;
-			$return["status_message"]    = [];
-
-			$return["status_message"][0] = $dealers_error;
 		}
 		else if($check_other_setting == 0 && $check_if_fullname_exist != null)
 		{
@@ -863,63 +781,9 @@ class Member
 		return $validDirects < $settings->binary_number_of_direct_for_auto_placement ? $position : null;
 	}
 
-	public static function get_milestone_cycle_info($slot_info)
-	{
-		$settings = Tbl_milestone_bonus_settings::first();
-
-		if (!$settings || !$settings->milestone_limit) {
-			return null;
-		}
-
-		$logs = Tbl_earning_log::where('earning_log_slot_id', $slot_info->slot_id)
-			->where('earning_log_plan_type', 'MILESTONE BONUS');
-
-		$now = Carbon::now();
-		$cycle = strtolower($settings->milestone_cycle_limit);
-		$type = strtolower($settings->milestone_type_limit); // 'earnings' or 'pairs'
-
-		$start = $end = null;
-
-		switch ($cycle) {
-			case 'daily':
-				$start = $now->copy()->startOfDay();
-				$end = $now->copy()->endOfDay();
-				break;
-
-			case 'halfday':
-				$isAM = $now->format('A') === 'AM';
-				$start = $isAM ? $now->copy()->startOfDay() : $now->copy()->setTime(12, 0, 0);
-				$end = $isAM ? $now->copy()->setTime(11, 59, 59) : $now->copy()->endOfDay();
-				break;
-
-			case 'weekly':
-				$start = $now->copy()->startOfWeek();
-				$end = $now->copy()->endOfWeek();
-				break;
-		}
-
-		if ($start && $end) {
-			$logs = $logs->whereBetween('earning_log_date_created', [$start, $end]);
-		}
-
-		$milestone['value'] = ($type === 'earnings')
-			? $logs->sum('earning_log_amount')
-			: $logs->count();
-
-		return $milestone;
-	}
-
     public static function get_count_direct($slot)
 	{
 		$slot_direct = [];
-
-		// Count recurring directs (after marketing_support_date_end if set)
-		$slot_direct['recurring_direct'] = Tbl_tree_placement::Child()
-			->where('placement_parent_id', $slot->slot_id)
-			->when($slot->marketing_support_date_end, function ($query, $dateEnd) {
-				return $query->where('tbl_slot.slot_date_placed', '>=', $dateEnd);
-			})
-			->count();
 
 		// Count left direct
 		$slot_direct['left_direct'] = Tbl_tree_placement::where('placement_parent_id', $slot->slot_id)
@@ -933,84 +797,4 @@ class Member
 
 		return $slot_direct;
 	}
-
-    public static function update_daily_marketing_support_income($slot_id) {
-        $slot = Tbl_slot::JoinMembership()->where('slot_id', $slot_id)->first();
-        if($slot) {
-            $now = Carbon::now();
-			$incomeCount = $slot->marketing_support_count_income + 1;
-            Tbl_marketing_support_log::where('log_slot_id', $slot->slot_id)
-                ->where('log_claimed', 0)
-                ->where('log_status', 0)
-				->where('log_income_count', $incomeCount)
-                ->where('log_date_created', '<=', $now)
-                ->update(['log_claimed' => 1]);
-				
-			$hasPendingLogs = Tbl_marketing_support_log::where([
-					['log_slot_id', '=', $slot->slot_id],
-					['log_claimed', '=', 0],
-					['log_status', '=', 0],
-					['log_income_count', '=', $incomeCount]
-				])->exists();
-				
-			if(!$hasPendingLogs) {
-				$sumLogIncome = DB::table('tbl_marketing_support_log')
-					->where('log_slot_id', $slot->slot_id)
-					// ->where('log_claimed', 1)
-					// ->where('log_status', 0)
-					->where('log_income_count', $incomeCount)
-					->sum('log_income');
-					
-				$dateIncome = DB::table('tbl_marketing_support_log')
-					->where('log_slot_id', $slot->slot_id)
-					// ->where('log_claimed', 1)
-					// ->where('log_status', 0)
-					->where('log_income_count', $incomeCount)
-					->orderByDesc('log_date_created')
-					->value('log_date_created');
-
-				$updateLog = DB::table('tbl_marketing_support_log')
-					->where('log_slot_id', $slot->slot_id)
-					->where('log_claimed', 1)
-					->where('log_status', 0)
-					->update(['log_status' => 1]);
-					
-				if($updateLog) {
-					Tbl_slot::where('slot_id', $slot->slot_id)
-						->update([
-							'marketing_support_activate' => 0,
-							'marketing_support_date_end' => $dateIncome,
-					]);	
-
-					Tbl_slot::where('slot_id', $slot->slot_id)
-        				->increment('marketing_support_count_income');
-
-					Log::insert_wallet($slot->slot_id, $sumLogIncome,"MARKETING SUPPORT", 1, null, $dateIncome);
-					Log::insert_earnings($slot->slot_id, $sumLogIncome,"MARKETING SUPPORT","SLOT PLACEMENT", $slot->slot_id, "", 1, 1, $dateIncome);
-				}
-			}
-        }
-    }
-
-	public static function update_leader_support_income($slot_id) {
-        $slot = Tbl_slot::JoinMembership()->where('slot_id', $slot_id)->first();
-        if($slot) {
-            $now = Carbon::now();
-			
-			$pendingLogs = Tbl_leaders_support_log::where('log_slot_id', $slot->slot_id)
-				->where('log_status', 0)
-				->where('log_date_end', '<=', $now)
-				->get();
-
-			foreach($pendingLogs as $log) {
-				// Update log status
-				Tbl_leaders_support_log::where('log_id', $log->log_id)
-           			->update(['log_status' => 1]);
-
-				// Insert wallet and earnings logs
-				Log::insert_wallet($slot->slot_id, $log->log_income,"LEADERS SUPPORT", 1, null, $log->log_date_end);
-				Log::insert_earnings($slot->slot_id, $log->log_income,"LEADERS SUPPORT","SLOT CREATION", $log->log_cause_slot_id, "", 1, 1, $log->log_date_end);
-			}
-        }
-    }
 }

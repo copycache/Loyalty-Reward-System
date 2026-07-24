@@ -5,7 +5,6 @@ use App\Models\Tbl_admin;
 use App\Models\Tbl_country;
 use App\Models\Tbl_company;
 use App\Models\Tbl_company_settings;
-use App\Models\Tbl_customer;
 use App\Models\Tbl_mlm_settings;
 use App\Models\Tbl_binary_settings;
 use App\Models\Tbl_mlm_plan;
@@ -15,13 +14,9 @@ use App\Models\Tbl_binary_points_settings;
 use App\Models\Tbl_binary_pairing;
 use App\Models\Tbl_mlm_unilevel_settings;
 use App\Models\Tbl_membership;
-use App\Models\Tbl_stairstep_settings;
-use App\Models\Tbl_stairstep_rank;
 use App\Models\Tbl_payout_settings;
-use App\Models\Tbl_payout_method;
 use App\Models\Tbl_bank;
 use App\Models\Tbl_remittance;
-use DB;
 use Carbon\Carbon;
 use Validator;
 class Wizard
@@ -358,38 +353,6 @@ class Wizard
 		{
 			$settings_combination["membership_required_pv"] = $value["membership_required_pv"];
 			Tbl_membership::where("membership_id",$value["membership_id"])->update($settings_combination);
-		}
-
-		$return["status"]         = "success"; 
-		$return["status_code"]    = 1; 
-		$return["status_message"] = "Settings Saved";
-		return $return;
-	}
-
-	public static function step_five_five($data)
-	{
-		$settings["personal_as_group"]	= $data["personal_as_group"];
-		$settings["live_update"]		= $data["live_update"];
-
-		$check = Tbl_stairstep_settings::first();
-		if(!$check)
-		{
-			if($settings["live_update"] == 1)
-			{
-				$settings["allow_downgrade"]	= $data["allow_downgrade"];
-				$settings["rank_first"]			= $data["rank_first"];		
-			}
-			Tbl_stairstep_settings::insert($settings);
-		}
-		else
-		{	
-			if($settings["live_update"] == 1)
-			{
-				$settings["allow_downgrade"]	= 0;
-				$settings["rank_first"]			= 0;
-			}
-			
-			Tbl_stairstep_settings::where("stairstep_settings_id",$check->stairstep_settings_id)->update($settings);
 		}
 
 		$return["status"]         = "success"; 

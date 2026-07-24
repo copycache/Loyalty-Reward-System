@@ -1,35 +1,34 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblOtherSettings extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_other_settings', function (Blueprint $table) {
-            $table->id('other_settings_id');
+        Schema::create('tbl_other_settings', function (Blueprint $table) 
+        {   
+            $table->increments('other_settings_id');
             $table->string('key')->nullable();
             $table->string('name')->nullable();
             $table->double('value')->default(0);
         });
-
-        DB::table('tbl_other_settings')->insert([
-            ['key' => 'register_google', 'name' => 'Google Registration', 'value' => '1'],
-            ['key' => 'register_facebook', 'name' => 'Facebook Registration', 'value' => '1'],
-        ]);
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_other_settings');
+        //
     }
-};
+}

@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblRemittance extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_remittance', function (Blueprint $table) {
-            $table->id('remittance_id');
+        Schema::create('tbl_remittance', function (Blueprint $table) 
+        {
+            $table->increments('remittance_id');
             $table->string('remittance_name');
             $table->tinyInteger('remittance_payout_enable')->default(0);
             $table->dateTime('remittance_date_created');
@@ -22,9 +25,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_remittance');
+        //
     }
-};
+}

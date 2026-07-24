@@ -316,6 +316,61 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Become a Member CTA */}
+      <section className="py-16 bg-linear-to-b from-green-50 to-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6">
+            Your Journey to a Healthier, Happier you, Start Here!
+          </h2>
+          <Button asChild size="lg">
+            <Link href="/membership">Become a member</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Premium Quality - Shop Now */}
+      <section className="py-16 bg-white text-center">
+        <div className="container mx-auto px-4">
+          <Image
+            src="/images/premium-quality.png"
+            alt="Premium Quality"
+            width={300}
+            height={300}
+            className="object-contain mx-auto mb-6"
+          />
+          <Button asChild size="lg" className="mt-4">
+            <Link href="/products">Shop Now!</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-16 bg-zinc-50">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-10">Why Choose Us?</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            {[
+              { src: "/images/why-choose-us/1.png", label: "Non GMO" },
+              { src: "/images/why-choose-us/2.png", label: "Premium Formula" },
+              { src: "/images/why-choose-us/3.png", label: "Natural Ingredients" },
+              { src: "/images/why-choose-us/4.png", label: "Gluten Free" },
+            ].map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-3">
+                <div className="w-24 h-24 relative">
+                  <Image
+                    src={item.src}
+                    alt={item.label}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <p className="font-semibold">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 text-center">

@@ -1,21 +1,24 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class TblCashOutList extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_cash_out_list', function (Blueprint $table) {
-            $table->id('cash_out_id');
+            $table->increments('cash_out_id');
             $table->string('cash_out_name');
             $table->string('cash_out_slot_code');
-            $table->unsignedInteger('cash_out_method_id');
+            $table->integer('cash_out_method_id')->unsigned();
+            $table->foreign('cash_out_method_id')->references('cash_out_method_id')->on('tbl_cash_out_method')->onDelete('cascade');
             $table->string('cash_out_primary_info')->nullable();
             $table->text('cash_out_secondary_info')->nullable();
             $table->text('cash_out_optional_info')->nullable();
@@ -31,28 +34,16 @@ return new class extends Migration
             $table->longText('cash_out_method_message')->nullable();
             $table->string('cash_out_status')->default('pending');
             $table->dateTime('cash_out_date');
-            $table->double('cash_out_original_amount_deducted');
-            $table->unsignedInteger('schedule_id')->nullable();
-            $table->text('cash_out_tin')->nullable();
-            $table->double('cash_out_savings')->default(0);
-            $table->text('cash_out_remarks')->nullable();
-            $table->string('cash_out_type')->nullable();
-            $table->string('gc_charge')->nullable();
-            $table->string('product_charge')->nullable();
-            $table->string('survey_charge')->nullable();
-            $table->double('cash_limit')->default(0);
-            $table->string('sender_name')->nullable();
-            $table->string('control_number')->nullable();
-            $table->text('receipt_thumbnail')->nullable();
-            $table->string('txnid')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cash_out_list');
+        //
     }
-};
+}

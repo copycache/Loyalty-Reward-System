@@ -1,43 +1,21 @@
 <?php
 namespace App\Globals;
 
-use DB;
-use Hash;
-use Crypt;
 use Validator;
 use Carbon\Carbon;
 
-use App\Models\Tbl_audit_trail;
 use App\Models\Tbl_slot_limit;
 use App\Models\Tbl_slot;
-use App\Models\Tbl_mlm_universal_pool_bonus_points;
 use App\Models\Tbl_mlm_plan;
-use App\Models\Tbl_mlm_incentive_bonus;
 use App\Models\Tbl_item;
 use App\Models\Tbl_currency;
 use App\Models\Tbl_top_recruiter;
-use App\Models\Tbl_stairstep_settings;
-use App\Models\User;
+use App\Models\Users;
 
 use App\Globals\Log;
-use App\Globals\Stairstep;
 
 class Slot_create
 {
-    public static function validate_slot_if_retailer($return,$owner_id)
-    {
-    	$user = User::where("id",$owner_id)->first();
-    	if($user)
-    	{
-    		if($user->registered_as_retailer == 1)
-    		{
-				$return["status_message"][$return["i"]] = "You cannot create/activate a slot on a retailer account.";
-				$return["i"]++;
-    		}
-    	}
-    	return $return;
-    }
-
     public static function validate_membership_code($return,$code,$pin, $not_import = 1)
     {
 
@@ -145,7 +123,7 @@ class Slot_create
 		}
 		else
 		{
-			$check_slot_owner = User::where('id', $data['slot_owner'])->first();
+			$check_slot_owner = Users::where('id', $data['slot_owner'])->first();
 			if(!$check_slot_owner)
 			{
 				$return['status_message'][$return["i"]] = 'No slot owner';
@@ -234,27 +212,11 @@ class Slot_create
 
     public static function new_slot_initial_data($new_id,$slot_sponsor,$membership_id,$slot_owner)
     {
-    	/* UNIVERSAL POOL */
+    	
     	$new_slot  									     = Tbl_slot::where("slot_id",$new_id)->first();
     	$check_slot_limit                                = Tbl_slot_limit::where("user_id",$slot_owner)->first();
 		$settings["slot_id"]                             = $new_id;
-		$settings["universal_pool_bonus_points"]         = 0;
-		$settings["universal_pool_bonus_grad_stat"]      = 0;
-		$settings["excess_universal_pool_bonus_points"]  = 0;
-		Tbl_mlm_universal_pool_bonus_points::insert($settings);
 
-		/* ULTRAPRO INCENTIVES */
-		$check_plan_incentive     = Tbl_mlm_plan::where('mlm_plan_code','=','INCENTIVE_BONUS')->first()->mlm_plan_enable;
-		$check_incentive_settings = Tbl_mlm_incentive_bonus::first() ? Tbl_mlm_incentive_bonus::first()->incentives_status : 0 ;
-		$code           	 	  = Tbl_item::where('item_type','=','membership_kit')->where('membership_id',$membership_id)->first(); 
-		if($code->item_points_incetives != 0 && $check_incentive_settings == 1 && $check_plan_incentive == 1)
-		{	
-			$currency_id	= Tbl_currency::where('currency_abbreviation','=',$code->item_points_currency)->first()->currency_id;
-			Log::insert_wallet($slot_sponsor->slot_id,$code->item_points_incetives,"UPCOIN",$currency_id);
-			$details = "";
-			Log::insert_earnings($slot_sponsor->slot_id,$code->item_points_incetives,"UPCOIN","PRODUCT REPURCHASE",$new_id,$details,0,$currency_id);
-		}
-		
 		/* SLOT LIMIT */
 		if(!$check_slot_limit)
 		{
@@ -270,26 +232,6 @@ class Slot_create
 
 		/* OTHER INITIAL DATA*/
 		Slot_create::insert_top_recruiter($new_slot);
-
-		/* STAIRSTEP UPDATE */
-		/* PROCEED TO HERE IF LIVE UPDATE IS ON*/
-		$check_plan_stairstep     = Tbl_mlm_plan::where('mlm_plan_code','=','STAIRSTEP')->first() ? Tbl_mlm_plan::where('mlm_plan_code','=','STAIRSTEP')->first()->mlm_plan_enable : 0;
-		if($check_plan_stairstep == 1)
-		{
-			$_is_live  = Tbl_stairstep_settings::first();
-			if($_is_live)
-			{
-				if($_is_live->live_update == 0)
-				{
-					$stairstep_direct = Tbl_slot::where("slot_id",$new_slot->slot_sponsor)->first();
-					if($stairstep_direct)
-					{
-						$is_slot_creation = true;
-						Stairstep::update_rank($new_slot->slot_sponsor,null,null,$is_slot_creation);
-					}
-				}
-			}
-		}
     }
 
     public static function insert_top_recruiter($new_slot)

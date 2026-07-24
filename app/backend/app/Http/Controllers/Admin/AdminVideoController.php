@@ -3,8 +3,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Globals\Audit_trail;
 use App\Models\Tbl_video;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\DB;
+use Request;
+use DB;
 class AdminVideoController extends AdminController
 {
     public function get()
@@ -20,7 +20,7 @@ class AdminVideoController extends AdminController
             {
                 if(isset($params['video_sequence']) && $params['video_sequence'] != null && $params['video_sequence'] != '')
                 {
-                    if(($params['type'] ?? null) != 'upload')
+                    if($params['type'] != 'upload')
                     {
                         if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $params['video_url'], $match)) {
                             $video_url_id = $match[1];
@@ -67,7 +67,7 @@ class AdminVideoController extends AdminController
             {
                 if(isset($params['video_sequence']) && $params['video_sequence'] != null && $params['video_sequence'] != '')
                 {
-                    if(($params['type'] ?? null) != 'upload')
+                    if($params['type'] != 'upload')
                     {
                         if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $params['video_url'], $match)) {
                             $video_url_id = $match[1];

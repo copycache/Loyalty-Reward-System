@@ -1,39 +1,47 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblOrderAndReceiptItem extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_orders_rel_item', function (Blueprint $table) {
-            $table->id('orders_rel_item_id');
-            $table->unsignedInteger('rel_order_id');
-            $table->unsignedInteger('item_id');
+        Schema::create('tbl_orders_rel_item', function (Blueprint $table) 
+        {   
+            $table->increments('orders_rel_item_id');
+            $table->integer('rel_order_id')->unsigned();
+            $table->foreign('rel_order_id')->references('order_id')->on('tbl_orders')->onDelete('cascade');
+            $table->integer('item_id')->unsigned();
+            $table->foreign('item_id')->references('item_id')->on('tbl_item')->onDelete('cascade');
             $table->integer('quantity');
+
         });
 
-        Schema::create('tbl_receipt_rel_item', function (Blueprint $table) {
-            $table->id('receipt_rel_item_id');
-            $table->unsignedInteger('rel_receipt_id');
-            $table->unsignedInteger('item_id');
+        Schema::create('tbl_receipt_rel_item', function (Blueprint $table) 
+        {   
+            $table->increments('receipt_rel_item_id');
+            $table->integer('rel_receipt_id')->unsigned();
+            $table->foreign('rel_receipt_id')->references('receipt_id')->on('tbl_receipt')->onDelete('cascade');
+            $table->integer('item_id')->unsigned();
+            $table->foreign('item_id')->references('item_id')->on('tbl_item')->onDelete('cascade');
             $table->integer('quantity');
-            $table->double('price')->default(0);
-            $table->double('subtotal')->default(0);
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_receipt_rel_item');
-        Schema::dropIfExists('tbl_orders_rel_item');
+        //
     }
-};
+}

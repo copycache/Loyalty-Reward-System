@@ -19,20 +19,9 @@ class Tbl_orders extends Model
 
     public function scopeGetWeekOrder($query)
     {
-        $query
-            ->where('order_date_created', '>', Carbon::now()->startOfWeek())
-            ->where('order_date_created', '<', Carbon::now()->endOfWeek());
+        $query  ->where('order_date_created', '>', Carbon::now()->startOfWeek())
+                ->where('order_date_created', '<', Carbon::now()->endOfWeek());
 
         return $query;
-    }
-
-    public function items()
-    {
-        return $this->belongsToMany(Tbl_item::class, 'tbl_orders_rel_item', 'rel_order_id', 'item_id');
-    }
-
-    public function receipt()
-    {
-        return $this->hasOne(Tbl_receipt::class, 'receipt_order_id', 'order_id');
     }
 }

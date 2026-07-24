@@ -1,31 +1,34 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblBinaryPairing extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_binary_pairing', function (Blueprint $table) {
-            $table->id('binary_pairing_id');
+        Schema::create('tbl_binary_pairing', function (Blueprint $table) 
+        {
+            $table->increments('binary_pairing_id');
             $table->double('binary_pairing_left')->default(0);
             $table->double('binary_pairing_right')->default(0);
             $table->double('binary_pairing_bonus')->default(0);
-            $table->tinyInteger('archive')->default(0);
-            $table->unsignedInteger('binary_pairing_membership')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_binary_pairing');
+        //
     }
-};
+}

@@ -8,10 +8,9 @@ class Tbl_wallet extends Model
 {
     use HasFactory;
 
-protected $guarded = [];
-
-protected $table = 'tbl_wallet';
-protected $primaryKey = "wallet_id";
+    protected $guarded = [];
+    protected $table = 'tbl_wallet';
+    protected $primaryKey = "wallet_id";
     public $timestamps = false;
 
     public function scopeCurrency($query)
@@ -22,6 +21,6 @@ protected $primaryKey = "wallet_id";
 
     public function scopePeso($query)
     {
-    return $query->where('tbl_currency.currency_id', 1);
+    	return $query->where('tbl_currency.currency_id', 1);
     }
 }

@@ -2,12 +2,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Globals\Slot;
-use App\Models\Tbl_stairstep_rank;
 use App\Models\Tbl_membership;
 use App\Models\Tbl_currency;
-use App\Models\Tbl_livewell_rank;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 
 class AdminSlotController extends AdminController
 {
@@ -42,9 +40,7 @@ class AdminSlotController extends AdminController
 
 	public function get_filters()
 	{
-		$response['ranks'] 		= Tbl_stairstep_rank::where("archive",0)->get();
 		$response['membership']	= Tbl_membership::where("archive",0)->get();
-		$response['livewell_rank']	= Tbl_livewell_rank::where("archive",0)->get();
 		return response()->json($response);
 	}
 

@@ -6,9 +6,6 @@ use Carbon\Carbon;
 use Hash;
 use Crypt;
 use Schema;
-use App\Globals\Eloading;
-use App\Models\Tbl_eloading_settings;
-use App\Models\Tbl_unilevel_matrix_bonus_settings;
 
 class Seed
 {
@@ -23,7 +20,6 @@ class Seed
         Seed::membership_seed();
         Seed::direct_bonus_seed();
         Seed::slot_seed();
-        Seed::board_slot_seed();
         Seed::currency_seed();
         Seed::mlm_settings_seed();
         Seed::cash_in_method_category_seed();
@@ -36,24 +32,15 @@ class Seed
         Seed::service_charge_seed();
         Seed::cash_in_method_seed();
         Seed::cash_out_method_seed();
-        Seed::stairstep_rank_discount();
-        Seed::stairstep_rank_seed();
         Seed::philippines_location();
         Seed::delivery_charge();
-        Seed::eloading_settings();
         Seed::get_fill_cashin_wallet();
-        Seed::universal_pool_bonus_points();
         Seed::customized_settings();
         Seed::cashier_payment_method_seed();
         Seed::top_recruiter_seed();
         Seed::other_settings_seed();
         Seed::investment_amount();
         Seed::island_group();
-        Seed::achievers_rank_seed();
-		Seed::marketing_tools_category_seed();
-		Seed::marketing_tools_subcategory_seed();
-		Seed::matrix_bonus_settings_seed();
-		Seed::livewell_rank_seed();
 		
         $return["status"]         = "success";
         $return["status_code"]    = 1;
@@ -77,20 +64,15 @@ class Seed
 			DB::table("tbl_cash_in_proofs")->where("cash_in_proof_id",$value->cash_in_proof_id)->update($update);
 
 		}
-		DB::table("tbl_currency")->where("currency_name","LOAD WALLET")->orWhere('currency_abbreviation','LOAD')->update(['currency_abbreviation'=>'LW','currency_name'=>'Load Wallet']);
 		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","php")->update(['cash_in_currency'=>'PHP','cash_in_wallet'=>'PHP']);
 		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","usd")->update(['cash_in_currency'=>'USD','cash_in_wallet'=>'USD']);
-		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","upt")->update(['cash_in_currency'=>'UPT','cash_in_wallet'=>'UPT']);
 		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","gc")->update(['cash_in_currency'=>'GC','cash_in_wallet'=>'GC']);
 		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","btc")->update(['cash_in_currency'=>'BTC','cash_in_wallet'=>'BTC']);
-		DB::table("tbl_cash_in_proofs")->where("cash_in_currency","lw")->update(['cash_in_currency'=>'LW','cash_in_wallet'=>'LW']);
 
 		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","php")->update(['cash_in_method_currency'=>'PHP']);
 		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","usd")->update(['cash_in_method_currency'=>'USD']);
-		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","upt")->update(['cash_in_method_currency'=>'UPT']);
 		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","gc")->update(['cash_in_method_currency'=>'GC']);
 		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","btc")->update(['cash_in_method_currency'=>'BTC']);
-		DB::table("tbl_cash_in_method")->where("cash_in_method_currency","lw")->update(['cash_in_method_currency'=>'LW']);
 
 	}
 
@@ -123,8 +105,8 @@ class Seed
 
 	public static function tab_module_seed()
 	{
-		$module      = ['My Wallet','Cash In','Cash Out','Code Vault','Leads','Earnings','My Network','Shopping','Investment','Eloading','Captcha','Watch Video','Survey','Ebooks','Banner','Live Streaming','Leaderboard','Achievers Rank','Reward Points', 'Incentive'];
-		$alias       = ['mywallet','cashin','cashout','coadevault','leads','earnings','mynetwork','shopping','investment','eloading','captcha','watch_video','survey','ebooks','banner','live_streaming','leaderboard','achievers_rank','reward_points', 'incentive'];
+		$module      = ['My Wallet','Cash In','Cash Out','Code Vault','Leads','Earnings','My Network','Shopping','Investment'];
+		$alias       = ['mywallet','cashin','cashout','coadevault','leads','earnings','mynetwork','shopping','investment'];
 
 		foreach ($module as $key => $value)
 		{
@@ -137,8 +119,8 @@ class Seed
 				DB::table('tbl_module')->insert($insert);
 			}
 		}
-		$a_module      = ['Dashboard','Member List','Product','Orders','Cashin Processing','Cashout Processing','Stockist And Branches','Marketing Plan','Eloading','Reports','Unilevel Orabella','Maintenance','Recompute','Recompute Single','Unilevel','Unilevel Two','Leveling Bonus Recompute','Manage Settings','Personal Cashback',"Recompute Membership","Global Pool","Survey",'Ebooks','Banner','Live Streaming','Leaderboard','Announcement','Orders For Approval','Dragonpay Orders','Voucher','Product Category','Sub-admin Settings','Achievers Rank','Reward Points', 'Incentive'];
-		$a_alias       = ['dashboard','member','product','orders','cashin','payout','cashier','marketing','eloading','report','unilevelorabella','maintenance','recompute','recomputesingle','unilevel','unileveltwo','levelingbonusrecompute','managesettings','personalcashback',"recomputemembership","distributeglobalpool",'survey','ebooks','banner','live_streaming','leaderboard','announcement','orders_for_approval','dragonpay_orders','voucher','product_category','admin_change_pass','achievers_rank','reward_points', 'incentive'];
+		$a_module      = ['Dashboard','Member List','Product','Orders','Cashin Processing','Cashout Processing','Stockist And Branches','Marketing Plan','Reports','Maintenance','Unilevel','Unilevel Two','Manage Settings','Product Category','Sub-admin Settings'];
+		$a_alias       = ['dashboard','member','product','orders','cashin','payout','cashier','marketing','report','maintenance','unilevel','unileveltwo','managesettings','product_category','admin_change_pass'];
 
 		foreach ($a_module as $key => $value)
 		{
@@ -197,8 +179,8 @@ class Seed
 
 	public static function currency_seed()
 	{
-		$name     = ['Philippine Peso','US Dollar', 'Ultra Pro Token', 'Gift Card', 'Bitcoin' ,'Load Wallet', 'Savings Wallet', 'Matched Points', 'One Leg Points', 'Survey Points', 'Indirect Points','Dragonpay','Voucher','COD','Available Cashin Wallet','Team Sales Bonus','Overriding Bonus','CD Wallet', 'Unilevel Points'];
-		$abv      = ['PHP','USD','UPT','GC','BTC','LW', 'SW', 'MP', 'OLP', 'SP', 'IP','DRAGONPAY','VOUCHER','COD','CW','TSB','OB','CDW','UPTS'];
+		$name     = ['Philippine Peso','US Dollar', 'Gift Card', 'Bitcoin', 'Savings Wallet', 'Matched Points', 'One Leg Points', 'Indirect Points','COD','Available Cashin Wallet','CD Wallet', 'Unilevel Points'];
+		$abv      = ['PHP','USD','GC','BTC', 'SW', 'MP', 'OLP', 'IP','COD','CW','OB','CDW','UPTS'];
 		$set      = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 		foreach($name as $key => $value)
 		{
@@ -257,10 +239,8 @@ class Seed
 
 	public static function mlm_plan_seed()
 	{
-		$code    = ['BINARY','DIRECT','UNILEVEL','STAIRSTEP','INDIRECT','CASHBACK','BOARD' ,'MONOLINE','PASS_UP','LEVELING_BONUS','UNILEVEL_OR','UNIVERSAL_POOL_BONUS','INCENTIVE_BONUS','BINARY_REPURCHASE','MEMBERSHIP_UPGRADE','SIGN_UP_BONUS','GLOBAL_POOL_BONUS','VORTEX_PLAN','PERSONAL_CASHBACK','SPONSOR_MATCHING_BONUS','SHARE_LINK','WATCH_EARN',"PASSIVE_UNILEVEL_PREMIUM","RETAILER_COMMISSION","SHARE_LINK_V2","PRODUCT_SHARE_LINK","OVERRIDING_COMMISSION","PRODUCT_DIRECT_REFERRAL","DIRECT_PERSONAL_CASHBACK",'PRODUCT_PERSONAL_CASHBACK','PRODUCT_DOWNLINE_DISCOUNT','REFERRAL_VOUCHER','OVERRIDING_COMMISSION_V2','TEAM_SALES_BONUS','OVERRIDING_BONUS','RETAILER_OVERRIDE','REVERSE_PASS_UP','ACHIEVERS_RANK','DROPSHIPPING_BONUS','WELCOME_BONUS', 'UNILEVEL_MATRIX_BONUS', 'LIVEWELL_RANK', 'REWARD_POINTS', 'PRIME_REFUND', 'INCENTIVE', 'MILESTONE_BONUS', 'INFINITY_BONUS', 'MARKETING_SUPPORT', 'LEADERS_SUPPORT'];
-
-		// $label   = ['Binary','Direct','Unilevel Bonus','Override Bonus','Indirect Referral Bonus'];
-		$trigger = ['Slot Placement','Slot Creation','Slot Repurchase','Slot Repurchase','Slot Creation','Slot Repurchase', 'Slot Creation' ,'Slot Creation','Slot Creation','Slot Placement','Slot Repurchase','Slot Creation','Slot Repurchase','Slot Repurchase', 'Slot Creation', 'Special Plan','Slot Distribute','Special Plan','Special Plan','Special Plan','Special Plan','Special Plan','Slot Creation','Product Purchase','Slot Creation',"Product Purchase","Product Purchase","Product Repurchase",'Special Plan','Product Purchase','Product Purchase','Referral','Product Purchase','Product Purchase','Product Purchase','Product Purchase','Slot Creation','Special Plan','Special Plan','Slot Creation', 'Slot Creation', 'Special Plan','Slot Repurchase', 'Slot Creation', 'Slot Repurchase', 'Slot Placement', 'Special Plan', 'Slot Placement', 'Slot Creation'];
+		$code    = ['BINARY','DIRECT','UNILEVEL','INDIRECT','BINARY_REPURCHASE','DROPSHIPPING_BONUS','WELCOME_BONUS'];
+		$trigger = ['Slot Placement','Slot Creation','Slot Repurchase','Slot Creation','Slot Repurchase','Special Plan','Slot Creation'];
 
 		foreach($code as $key => $value)
 		{
@@ -367,19 +347,6 @@ class Seed
 		}
 	}
 
-	public static function board_slot_seed()
-	{
-		$count       = DB::table("tbl_mlm_board_slot")->count();
-
-		if($count == 0)
-		{
-			$insert_board_slot['slot_id'] = 1;
-			$insert_board_slot['placement'] = 0;
-			$insert_board_slot['placement_position'] = "LEFT";
-			DB::table('tbl_mlm_board_slot')->insert($insert_board_slot);
-		}
-
-	}
 	public static function mlm_settings_seed()
 	{
 		$count       = DB::table("tbl_mlm_settings")->count();
@@ -460,37 +427,6 @@ class Seed
 			$insert["item_id"]          			     = 1;
 
 			DB::table("tbl_item_stockist_discount")->insert($insert);
-		}
-	}
-
-	public static function stairstep_rank_discount()
-	{
-		$count       = DB::table("tbl_item_stairstep_rank_discount")->count();
-
-		if($count == 0)
-		{
-			DB::statement("ALTER TABLE tbl_item_stairstep_rank_discount AUTO_INCREMENT =  1");
-
-			$insert["stairstep_rank_id"]                 = 1;
-			$insert["item_id"]          			     = 1;
-
-			DB::table("tbl_item_stairstep_rank_discount")->insert($insert);
-		}
-	}
-
-	public static function stairstep_rank_seed()
-	{
-		$count       = DB::table("tbl_stairstep_rank")->count();
-
-		if($count == 0)
-		{
-			DB::statement("ALTER TABLE tbl_stairstep_rank AUTO_INCREMENT =  1");
-
-			$insert["stairstep_rank_name"]                 = "1 star";
-			$insert["stairstep_rank_date_created"]         = Carbon::now();
-			$insert["stairstep_rank_level"]                = 1;
-
-			DB::table("tbl_stairstep_rank")->insert($insert);
 		}
 	}
 
@@ -582,7 +518,7 @@ class Seed
 
 	public static function cashier_payment_method_seed()
 	{
-		$payment_method     = ['Cash', 'Cheque', 'GC', 'Wallet','Dragonpay','COD'];
+		$payment_method     = ['Cash', 'Cheque', 'GC', 'Wallet','COD'];
 		foreach($payment_method as $key => $value)
 		{
 			$insert["cashier_payment_method_name"]           = $value;
@@ -765,38 +701,6 @@ class Seed
 		}
 	}
 
-	public static function eloading_settings()
-	{
-		$count = Tbl_eloading_settings::count();
-		if($count==0)
-		{
-			$insert['eloading_additional_wallet_percentage'] = 10;
-			Tbl_eloading_settings::insert($insert);
-		}
-
-
-		$tab_name = ['ELOAD','CALL CARDS','GAMES','SATELLITE','OTHERS','PORTAL'];
-		foreach ($tab_name as $key => $value)
-		{
-			$check = DB::table("tbl_eloading_tab_settings")->where("eloading_tab_name",$value)->first();
-			if(!$check)
-			{
-				DB::table("tbl_eloading_tab_settings")->insert(['eloading_tab_name'=>$value]);
-			}
-		}
-	}
-	public static function universal_pool_bonus_points()
-	{
-		$count = DB::table('tbl_mlm_universal_pool_bonus_points')->count();
-		if($count == 0)
-		{
-			$settings["slot_id"]                             = 1;
-            $settings["universal_pool_bonus_points"]         = 0;
-            $settings["universal_pool_bonus_grad_stat"]      = 0;
-            $settings["excess_universal_pool_bonus_points"]  = 0;
-            DB::table('tbl_mlm_universal_pool_bonus_points')->insert($settings);
-		}
-	}
 	public static function top_recruiter_seed()
 	{
 		$count = DB::table('tbl_top_recruiter')->count();
@@ -813,20 +717,7 @@ class Seed
 
 	public static function other_settings_seed()
 	{
-		if(!DB::table('tbl_other_settings')->where("key","allow_slot_transfer")->first())
-		{
-			$settings["key"]            = 'allow_slot_transfer';
-			$settings["name"]           = 'Allow Slot Transfers';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","slot_transfer")->first())
-		{
-			$settings["key"]            = 'slot_transfer';
-			$settings["name"]           = 'Max Slot Transfers';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+		
 		if(!DB::table('tbl_other_settings')->where("key","default_slot_limit")->first())
 		{
 			$settings["key"]            = 'default_slot_limit';
@@ -834,27 +725,7 @@ class Seed
 			$settings["value"]          = 0;
 			DB::table('tbl_other_settings')->insert($settings);
 		}
-		if(!DB::table('tbl_other_settings')->where("key","retailer")->first())
-		{
-			$settings["key"]            = 'retailer';
-			$settings["name"]           = 'Allow Retailer';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","max_retailer")->first())
-		{
-			$settings["key"]            = 'max_retailer';
-			$settings["name"]           = 'Max Retailer Limit';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","dealers_bonus")->first())
-		{
-			$settings["key"]            = 'dealers_bonus';
-			$settings["name"]           = 'Dealers Bonus';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+
 		if(!DB::table('tbl_other_settings')->where("key","show_slot_code")->first())
 		{
 			$settings["key"]          = 'show_slot_code';
@@ -880,25 +751,12 @@ class Seed
 		{
 			DB::table('tbl_other_settings')->where("key","allow_unique_name")->delete();
 		}
-		if(!DB::table('tbl_other_settings')->where("key","register_on_slot")->first())
-		{
-			$settings["key"]            = 'register_on_slot';
-			$settings["name"]           = 'Add register on activation of code';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+		
 		if(!DB::table('tbl_other_settings')->where("key","register_your_slot")->first())
 		{
 			$settings["key"]            = 'register_your_slot';
 			$settings["name"]           = 'Allow Register of Activation Code to yourself';
 			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","lockdown_enable")->first())
-		{
-			$settings["key"]            = 'lockdown_enable';
-			$settings["name"]           = 'Allow lockdown';
-			$settings["value"]          = 0;
 			DB::table('tbl_other_settings')->insert($settings);
 		}
 		if(!DB::table('tbl_other_settings')->where("key","product_activate")->first())
@@ -915,13 +773,7 @@ class Seed
 			$settings["value"]          = 0;
 			DB::table('tbl_other_settings')->insert($settings);
 		}
-		if(!DB::table('tbl_other_settings')->where("key","default_added_days")->first())
-		{
-			$settings["key"]            = 'default_added_days';
-			$settings["name"]           = 'Default Added Days For Lockdown';
-			$settings["value"]          = 90;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+
 		if(!DB::table('tbl_other_settings')->where("key","name_on_dropdown")->first())
 		{
 			$settings["key"]            = 'name_on_dropdown';
@@ -936,41 +788,7 @@ class Seed
 			$settings["value"]          = 0;
 			DB::table('tbl_other_settings')->insert($settings);
 		}
-		if(!DB::table('tbl_other_settings')->where("key","register_google")->first())
-		{
-			$settings["key"]            = 'register_google';
-			$settings["name"]           = 'Login/RegisterRegister using google';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","register_facebook")->first())
-		{
-			$settings["key"]            = 'register_facebook';
-			$settings["name"]           = 'Login/RegisterRegister using facebook';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","lockdown_grace_period")->first())
-		{
-			$settings["key"]            = 'lockdown_grace_period';
-			$settings["name"]           = 'Grace period before autoship( Lockdown )';
-			$settings["value"]          = 0;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","breakdown_gc")->first())
-		{
-			$settings["key"]            = 'breakdown_gc';
-			$settings["name"]           = 'Show Breakdown GC';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","breakdown_left_and_right")->first())
-		{
-			$settings["key"]            = 'breakdown_left_and_right';
-			$settings["name"]           = 'Show Breakdown Left & Right Points';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+		
 		if(!DB::table('tbl_other_settings')->where("key","tin_settings")->first())
 		{
 			$settings["key"]            = 'tin_settings';
@@ -978,27 +796,7 @@ class Seed
 			$settings["value"]          = 1;
 			DB::table('tbl_other_settings')->insert($settings);
 		}
-		if(!DB::table('tbl_other_settings')->where("key","top_earners")->first())
-		{
-			$settings["key"]            = 'top_earners';
-			$settings["name"]           = 'Members Area Top Earners';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","bday_corner")->first())
-		{
-			$settings["key"]            = 'bday_corner';
-			$settings["name"]           = 'Members Area Birthday Corner';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
-		if(!DB::table('tbl_other_settings')->where("key","announcement")->first())
-		{
-			$settings["key"]            = 'announcement';
-			$settings["name"]           = 'Members Area Announcement';
-			$settings["value"]          = 1;
-			DB::table('tbl_other_settings')->insert($settings);
-		}
+
 		if(!DB::table('tbl_other_settings')->where("key","registration_with_activation")->first())
 		{
 			$settings["key"]            = 'registration_with_activation';
@@ -1029,88 +827,5 @@ class Seed
 			}
 		}		
 	}
-	public static function achievers_rank_seed()
-	{
-		$count       = DB::table("tbl_achievers_rank")->count();
-
-		if($count == 0)
-		{
-			DB::statement("ALTER TABLE tbl_achievers_rank AUTO_INCREMENT =  1");
-
-			$insert["achievers_rank_level"]                = 1;
-			$insert["achievers_rank_name"]                 = "1 star";
-			$insert["achievers_rank_reward"]         	   = "100";
-			$insert["achievers_rank_date_created"]         = Carbon::now();
-
-			DB::table("tbl_achievers_rank")->insert($insert);
-		}
-	}
-	public static function marketing_tools_category_seed()
-	{
-		$insert["category_name"] = "Category 1";
-		$insert["archived"] = 0;
-		$insert["image_required"] = 0;
-		$insert["video_required"] = 0;
-		$insert["created_at"] = Carbon::now();
-
-		$check = DB::table("tbl_marketing_tools_category")->first();
-
-		if(!$check)
-		{
-			DB::table("tbl_marketing_tools_category")->insert($insert);
-		}
-	}
-
-	public static function marketing_tools_subcategory_seed()
-	{
-
-		$category_id = [1,1];
-		$sub_category_name = ["Subcategory 1", "Subcategory 2"];
-		$archived = [0, 0];
-
-		$check = DB::table("tbl_marketing_tools_subcategory")->first();
-
-		if(!$check)
-		{
-			foreach ($category_id as $index => $value) {
-				$insert["category_id"] = $category_id[$index];
-				$insert["sub_category_name"] = $sub_category_name[$index];
-				$insert["archived"] = $archived[$index];
-				$insert["created_at"] = Carbon::now();
-
-				DB::table("tbl_marketing_tools_subcategory")->insert($insert);
-			}
-		}
-	}
-
-	public static function matrix_bonus_settings_seed()
-	{
-		if (!Tbl_unilevel_matrix_bonus_settings::exists()) {
-			$inserts = [
-				[
-					"matrix_level" => 0,
-				]
-			];
-		
-			Tbl_unilevel_matrix_bonus_settings::insert($inserts);
-		}
-	}
-
-	public static function livewell_rank_seed()
-	{
-		$count = DB::table("tbl_livewell_rank")->count();
-		if($count == 0)
-		{
-			DB::statement("ALTER TABLE tbl_livewell_rank AUTO_INCREMENT =  1");
-
-			$insert = [
-				"livewell_rank_level" => 1,
-				"livewell_rank_name" => "Rank 1",
-				"livewell_bind_membership" => 1,
-				"livewell_rank_date_created" => Carbon::now() // Corrected to match the column name in migration
-			];
-			
-			DB::table("tbl_livewell_rank")->insert($insert);
-		}
-	}
+	
 }

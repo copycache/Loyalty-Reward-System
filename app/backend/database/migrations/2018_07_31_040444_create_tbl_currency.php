@@ -1,32 +1,35 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCurrency extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_currency', function (Blueprint $table) {
-            $table->id('currency_id');
+        Schema::create('tbl_currency', function (Blueprint $table) 
+        {
+            $table->increments('currency_id');
             $table->string('currency_name');
             $table->string('currency_abbreviation');
             $table->tinyInteger('currency_default')->default(0);
             $table->tinyInteger('archive')->default(0);
-            $table->tinyInteger('currency_buying')->default(0);
-            $table->tinyInteger('currency_enable')->default(0);
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_currency');
+        //
     }
-};
+}

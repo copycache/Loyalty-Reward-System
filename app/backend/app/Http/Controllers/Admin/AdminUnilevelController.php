@@ -13,10 +13,8 @@ use App\Models\Tbl_slot;
 use App\Models\Tbl_membership;
 use App\Models\Tbl_unilevel_distribute;
 use App\Models\Tbl_unilevel_distribute_full;
-use App\Models\Tbl_stairstep_distribute;
-use App\Models\Tbl_stairstep_distribute_full;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 use Carbon\Carbon;
 
 class AdminUnilevelController extends AdminController
@@ -64,7 +62,6 @@ class AdminUnilevelController extends AdminController
 					{
 						Log::insert_wallet($slot_id,$convert_wallet,"UNILEVEL");
 						Log::insert_earnings($slot_id,$convert_wallet,"UNILEVEL","UNILEVEL DISTRIBUTION",$slot_id,"", 0);
-                		Special_plan::infinity_bonus($slot, "UNILEVEL", $convert_wallet);
 					}
 				}
 
@@ -93,7 +90,6 @@ class AdminUnilevelController extends AdminController
 		$start_date 					 = Request::input("start_date");  
 		$end_date   				     = Request::input("end_date")." 23:59:59"; 	
 		$full_id    					 = Request::input("full_id"); 	
-		$stairstep_full_id               = Request::input("stairstep_full_id"); 	
 
 		Self::$child_level[$slot_id]   = 0;
 		Self::$child_counter[$slot_id] = 0;
@@ -102,7 +98,7 @@ class AdminUnilevelController extends AdminController
 		// $slot_id			= 1;
 		// $start_date			= "10/01/2018";
 		// $end_date			= "10/31/2018";
-		$response  = $this->distribute_points($slot_id,$full_id,$start_date,$end_date,$stairstep_full_id);
+		$response  = $this->distribute_points($slot_id,$full_id,$start_date,$end_date);
 
 		return response()->json($response, 200);
 	}
@@ -123,7 +119,6 @@ class AdminUnilevelController extends AdminController
 		$return["status_code"]        = 201;
 		$return["status_message"]     = "Slot Distribution Start";
 		$return["distribute_full_id"] = Tbl_unilevel_distribute_full::insertGetId($insert);
-		$return["stairstep_distribute_full_id"] = Tbl_stairstep_distribute_full::insertGetId($insert);
 
 		return response()->json($return, 200);
 	}

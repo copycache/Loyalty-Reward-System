@@ -6,9 +6,9 @@ use App\Globals\Audit_trail;
 use App\Models\Tbl_cashier_bonus;
 use App\Models\Tbl_cashier_bonus_settings;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 use Hash;
-use Illuminate\Support\Facades\DB;
+use DB;
 class AdminCashierController extends AdminController
 {
     public function add_cashier() 

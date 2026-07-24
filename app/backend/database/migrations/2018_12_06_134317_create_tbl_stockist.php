@@ -1,29 +1,37 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblStockist extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_stockist', function (Blueprint $table) {
-            $table->id('stockist_id');
-            $table->unsignedInteger('stockist_user_id');
-            $table->unsignedInteger('stockist_branch_id');
-            $table->unsignedInteger('stockist_level');
+        Schema::create('tbl_stockist', function (Blueprint $table) 
+        {   
+            $table->increments('stockist_id');
+            $table->integer('stockist_user_id')->unsigned();
+            $table->foreign('stockist_user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->integer('stockist_branch_id')->unsigned();
+            $table->foreign('stockist_branch_id')->references('branch_id')->on('tbl_branch')->onDelete('cascade');
+            $table->integer('stockist_level')->unsigned();
+            $table->foreign('stockist_level')->references('stockist_level_id')->on('tbl_stockist_level')->onDelete('cascade');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_stockist');
+        //
     }
-};
+}

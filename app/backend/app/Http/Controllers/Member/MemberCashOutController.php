@@ -10,7 +10,7 @@ use App\Globals\Slot;
 use App\Globals\Wallet;
 use App\Globals\CashOut;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 
 class MemberCashOutController extends MemberController
 {

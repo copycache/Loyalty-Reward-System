@@ -1,18 +1,20 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class TblCashOutSchedule extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_cash_out_schedule', function (Blueprint $table) {
-            $table->id('schedule_id');
+            $table->increments('schedule_id');
             $table->string('schedule_status');
             $table->dateTime('schedule_date_from');
             $table->dateTime('schedule_date_to');
@@ -20,17 +22,16 @@ return new class extends Migration
             $table->double('total_payout_charge');
             $table->double('total_payout_required');
             $table->dateTime('date_created');
-            $table->double('total_payout_receivable');
-            $table->integer('schedule_method_id')->default(0);
-            $table->smallInteger('is_archived')->default(0);
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cash_out_schedule');
+        //
     }
-};
+}

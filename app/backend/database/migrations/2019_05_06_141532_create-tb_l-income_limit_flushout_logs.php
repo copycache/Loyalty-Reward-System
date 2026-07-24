@@ -1,28 +1,35 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTbLIncomeLimitFlushoutLogs extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_income_limit_flushout_logs', function (Blueprint $table) {
-            $table->id('income_limit_flushout_logs_id');
+        Schema::create('tbl_income_limit_flushout_logs', function (Blueprint $table) 
+        {
+            $table->increments('income_limit_flushout_logs_id');
             $table->double('flushout_income_amount')->default(0);
-            $table->unsignedInteger('flushout_income_slot_id');
+            $table->integer('flushout_income_slot_id')->unsigned();
+            $table->foreign('flushout_income_slot_id')->references('slot_id')->on('tbl_slot')->onDelete('cascade');
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_income_limit_flushout_logs');
+        //
     }
-};
+}

@@ -1,30 +1,33 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblDeliveryCharge extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_delivery_charge', function (Blueprint $table) {
-            $table->id('method_id');
-            $table->string('method_name');
-            $table->double('method_charge');
-            $table->smallInteger('enable')->default(1);
-            $table->double('method_discount')->default(0);
+          Schema::create('tbl_delivery_charge', function (Blueprint $table) 
+        {
+            $table->increments('method_id');
+            $table->integer('method_name');
+            $table->integer('method_charge');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_delivery_charge');
+        //
     }
-};
+}

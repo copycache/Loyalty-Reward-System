@@ -1,30 +1,39 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblMembershipUpgradeLogs extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_membership_upgrade_logs', function (Blueprint $table) {
-            $table->id('membership_upgrade_log_id');
-            $table->unsignedInteger('slot_id')->nullable();
-            $table->unsignedInteger('old_membership_id')->nullable();
-            $table->unsignedInteger('new_membership_id')->nullable();
-            $table->dateTime('upgraded_at');
+        Schema::create('tbl_membership_upgrade_logs', function (Blueprint $table)
+        {
+            $table->increments('membership_upgrade_log_id');
+            $table->integer("slot_id")->unsigned()->nullable();
+            $table->foreign('slot_id')->references('slot_id')->on('tbl_slot')->onDelete('cascade');
+            $table->integer("old_membership_id")->unsigned()->nullable();
+            $table->foreign('old_membership_id')->references('membership_id')->on('tbl_membership')->onDelete('cascade');
+            $table->integer("new_membership_id")->unsigned()->nullable();
+            $table->foreign('new_membership_id')->references('membership_id')->on('tbl_membership')->onDelete('cascade');
+            $table->datetime('upgraded_at');
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_membership_upgrade_logs');
+        //
     }
-};
+}

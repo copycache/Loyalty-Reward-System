@@ -1,34 +1,37 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblDropshippingList extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_dropshipping_list', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedInteger('order_id');
+            $table->increments('id');
+            $table->integer('order_id')->unsigned();
             $table->text('ordered_item')->nullable();
             $table->double('subtotal')->nullable();
             $table->integer('status')->default(0);
             $table->string('date_ordered')->nullable();
             $table->string('date_completed')->nullable();
-            $table->double('shipping_fee')->nullable();
-            $table->double('grand_total')->nullable();
+            $table->foreign('order_id')->references('order_id')->on('tbl_orders')->onDelete('cascade');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_dropshipping_list');
+        //
     }
-};
+}

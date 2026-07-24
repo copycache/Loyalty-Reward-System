@@ -1,18 +1,20 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblInvestmentPackageTagTable extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_investment_package_tag', function (Blueprint $table) {
-            $table->id('investment_package_tag_id');
+            $table->increments('investment_package_tag_id');
             $table->string('investment_amount');
             $table->string('investment_date');
             $table->integer('investment_package_id');
@@ -24,9 +26,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('tbl_investment_package_tag');
     }
-};
+}

@@ -10,9 +10,7 @@ class Tbl_top_recruiter extends Model
     use HasFactory;
 
 	protected $table = 'tbl_top_recruiter';
-
 	protected $primaryKey = "id";
-
 	protected $guarded = [];
     public $timestamps = false;
 

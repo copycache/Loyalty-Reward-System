@@ -3,8 +3,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Globals\Branch;
 use App\Globals\Audit_trail;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\DB;
+use Request;
+use DB;
 class AdminBranchController extends AdminController
 {
     public function add_branch() 

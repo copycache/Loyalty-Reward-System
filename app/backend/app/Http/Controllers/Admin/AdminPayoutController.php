@@ -5,7 +5,7 @@ use App\Globals\Payout;
 use App\Models\Tbl_cash_out_list;
 use App\Models\Tbl_tree_sponsor;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 
 class AdminPayoutController extends AdminController
 {

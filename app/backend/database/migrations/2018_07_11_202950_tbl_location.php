@@ -1,28 +1,32 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class TblLocation extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_location', function (Blueprint $table) {
-            $table->id('location_id');
+        Schema::create('tbl_location', function (Blueprint $table) 
+        {
+            $table->increments('location_id');
             $table->string('location');
-            $table->tinyInteger('archive')->default(0);
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_location');
+        //
     }
-};
+}

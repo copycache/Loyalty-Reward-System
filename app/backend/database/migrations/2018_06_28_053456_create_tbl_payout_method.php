@@ -1,32 +1,36 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblPayoutMethod extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_payout_method', function (Blueprint $table) {
-            $table->id('payout_method_id');
+        Schema::create('tbl_payout_method', function (Blueprint $table) 
+        {
+            $table->increments('payout_method_id');
             $table->string('payout_method_name');
-            $table->string('payout_method_type');
-            $table->double('payout_method_fee')->default(0);
-            $table->string('payout_method_fee_type')->nullable();
-            $table->text('payout_method_image')->nullable();
-            $table->tinyInteger('archived')->default(0);
+            $table->string('payout_method_status');
+            $table->double('payout_method_charge');
+            $table->tinyInteger('archive')->default(0);
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_payout_method');
+        //
     }
-};
+}

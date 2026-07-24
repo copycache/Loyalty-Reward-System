@@ -1,33 +1,41 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCashier extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_cashier', function (Blueprint $table) {
-            $table->id('cashier_id');
-            $table->unsignedInteger('cashier_branch_id');
-            $table->unsignedInteger('cashier_user_id');
+        Schema::create('tbl_cashier', function (Blueprint $table) 
+        {
+            $table->increments('cashier_id');
+            $table->integer('cashier_branch_id')->unsigned();
+            $table->integer('cashier_user_id')->unsigned();
+            $table->foreign('cashier_branch_id')->references('branch_id')->on('tbl_branch')->onDelete('cascade');
+            $table->foreign('cashier_user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('cashier_address')->nullable();
             $table->string('cashier_contact_number')->nullable();
             $table->string('cashier_position');
             $table->string('cashier_status');
-            $table->dateTime('cashier_date_created');
+            $table->datetime('cashier_created_date');
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cashier');
+        //
     }
-};
+}

@@ -1,55 +1,49 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCodesAndTblInventory extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_inventory', function (Blueprint $table) {
-            $table->id('inventory_id');
-            $table->unsignedInteger('inventory_branch_id');
-            $table->unsignedInteger('inventory_item_id')->nullable();
+        Schema::create('tbl_inventory', function (Blueprint $table) 
+        {
+            $table->increments('inventory_id');
+            $table->integer('inventory_branch_id')->unsigned();
+            $table->foreign('inventory_branch_id')->references('branch_id')->on('tbl_branch')->onDelete('cascade');
             $table->string('inventory_status')->nullable();
-            $table->integer('inventory_quantity')->default(0);
-            $table->integer('inventory_sold')->default(0);
-            $table->integer('inventory_total')->default(0);
+            $table->integer('inventory_quantity')->nullable();
         });
-
-        Schema::create('tbl_codes', function (Blueprint $table) {
-            $table->id('code_id');
-            $table->unsignedInteger('code_inventory_id');
+        Schema::create('tbl_codes', function (Blueprint $table) 
+        {
+            $table->increments('code_id');
+            $table->integer('code_inventory_id')->unsigned();
+            $table->foreign('code_inventory_id')->references('inventory_id')->on('tbl_inventory')->onDelete('cascade');
             $table->string('code_activation');
             $table->string('code_pin');
-            $table->unsignedInteger('code_sold_to')->nullable();
-            $table->datetime('code_date_sold')->nullable();
-            $table->datetime('code_date_used')->nullable();
-            $table->unsignedInteger('code_used_by')->nullable();
+            $table->integer('code_sold_to')->unsigned();
+            $table->foreign('code_sold_to')->references('id')->on('users')->onDelete('cascade');
+            $table->datetime('code_date_sold');
+            $table->datetime('code_date_used');
             $table->tinyInteger('code_used')->default(0);
             $table->tinyInteger('code_sold')->default(0);
-            $table->integer('code_slot_used')->nullable();
-            $table->unsignedInteger('inventory_sold');
-            $table->unsignedInteger('inventory_total');
-            $table->tinyInteger('archived')->default(0);
-            $table->unsignedInteger('kit_requirement')->nullable();
-            $table->dateTime('date_packed')->nullable();
-            $table->integer('dragonpay')->default(0);
-            $table->integer('order_id')->nullable();
-            $table->unsignedInteger('org_code_sold_to')->nullable();
-        });
+        }); 
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_codes');
-        Schema::dropIfExists('tbl_inventory');
+        //
     }
-};
+}

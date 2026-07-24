@@ -14,8 +14,8 @@ use App\Models\Tbl_wallet_log;
 use App\Models\Tbl_currency;
 use Crypt;
 
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\DB;
+use Request;
+use DB;
 use Carbon\Carbon;
 class AdminMemberController extends AdminController
 {
@@ -171,41 +171,6 @@ class AdminMemberController extends AdminController
 		$response = Slot::get_slot_codevault(Request::input(), 10)->toArray();
 		return response()->json($response, 200);
 	}
-	public function initialize_recompute()
-	{
-		DB::table("tbl_wallet_log")->delete();
-		DB::table("tbl_wallet")->update(['wallet_amount' => 0]);
-		DB::table("tbl_points_log")->where("points_log_type","BINARY_RIGHT")->delete();
-		DB::table("tbl_points_log")->where("points_log_type","BINARY_LEFT")->delete();
-		DB::table("tbl_binary_points")->delete();
-		DB::table("tbl_cash_out_list")->delete();
-		DB::table("tbl_cash_out_schedule")->delete();
-		DB::table("tbl_earning_log")->delete();
-		DB::table("tbl_slot")->update(["slot_left_points"=>0]);
-		DB::table("tbl_slot")->update(["slot_right_points"=>0]);
-		DB::table("tbl_slot")->update(["slot_total_earnings"=>0]);
-		DB::table("tbl_slot")->update(["slot_pairs_per_day_date"=>""]);
-		DB::table("tbl_slot")->update(["slot_pairs_per_day"=>0]);
-		DB::table("tbl_slot")->update(["meridiem" => ""]);
-
-		$data["_slot_sponsor"] 		= Tbl_slot::owner()->orderBy('slot_date_created')->where("membership_inactive",0)->where("slot_sponsor","!=",0)->get();
-		$data["_slot_placement"] 	= Tbl_slot::owner()->orderBy('slot_date_placed')->where("membership_inactive",0)->where("slot_sponsor","!=",0)->where("slot_placement", "!=", 0)->get();
-
-		$action = "Recompute Data";
-		Audit_trail::audit(null,null,Request::input('user'),$action);
-
-		echo json_encode($data);
-	}
-	public function recompute_sponsor()
-	{
-		MLM::create_entry(request()->slot_id);
-		echo json_encode(request()->slot_id);
-	}
-	public function recompute_placement()
-	{
-		MLM::placement_entry(request()->slot_id);
-		echo json_encode(request()->slot_id);
-	}
 	public function slot_limit()
 	{
 
@@ -226,51 +191,8 @@ class AdminMemberController extends AdminController
 
 	public function import_excel()
 	{
-		// $stat           = "success";
-		// $file         	= Request::file('file_data')->getRealPath();
-		// $_data        	= Excel::selectSheetsByIndex(0)->load($file, function($reader){})->all();
-		// $first        	= $_data[0]; 
-		
-		// dd($_data[0]);
-		// if(isset($first['product_name'])&&isset($first['product_code']))
-		// {  
-		//     $count_success 		= 0;
-		// 	$count_error = 0;
-			
-		// 	foreach($_data as $key_row =>$data)
-		// 	{
-		// 		$product_check    = Tbl_eloading_product::where('eloading_product_code',$data['product_code'])->count();
-		// 		if($product_check!=0||$data['product_code']==null||$data['product_name']==null)
-		// 		{
-		// 			Self::excel_error($data,'Product code exist',$key_row);
-		// 			$count_error++;
-		// 		}
-		// 		else
-		// 		{
-		// 			$insert['eloading_product_name']        =   $data['product_name'];
-		// 			$insert['eloading_product_code']       	=   $data['product_code'];
-		// 			$insert['eloading_product_description'] =   $data['product_description']; 
-		// 			$insert['eloading_product_validity']    =   $data['product_validity'];
-		// 			$insert['eloading_product_guide']    	=   $data['product_guide'];
-		// 			$insert['eloading_product_subscriber']  =   $data['product_subscriber'];
-		// 			$insert['eloading_product_type']        =   $data['product_type'];
-					
-		// 			Tbl_eloading_product::insert($insert);
-					
-		// 			$count_success++;
-		// 		}
-		// 	}
-		// }
-		// else
-		// {
-		// 	$stat         = "error";
-		// }
-
 		$return["message"]        		= "DONE IMPORTATION";
-		// $return["status"]         		= $stat;
 		$return["status_code"]    		= 404;
-		// $return["count_success"]     	= $count_success;
-		// $return["count_error"]     		= $count_error;
 		
 		return response()->json($return);
 	
@@ -289,9 +211,9 @@ class AdminMemberController extends AdminController
 	public function adjust_wallet()
     {
 		$data    = request()->all();
-    	if($data['plan'] ?? null)
+    	if($data['plan'])
     	{
-			if(($data['currency_id'] ?? null) == null || ($data['currency_id'] ?? '') == '')
+			if($data['currency_id'] == null || $data['currency_id'] == '')
 			{
 				$data['currency_id'] = Tbl_currency::where("currency_default",1)->first()->currency_id;
 			}
@@ -305,7 +227,7 @@ class AdminMemberController extends AdminController
     			$details       = "";
     			$level         = 1;
 				
-    			if(($data['amount'] ?? 0) != 0)
+    			if($data['amount'] != 0)
     			{
 					//audit trail old value
 					$old_value = Tbl_wallet_log::where("wallet_log_slot_id",$data['slot_id'])->where("currency_id",$data['currency_id'])->sum("wallet_log_amount");

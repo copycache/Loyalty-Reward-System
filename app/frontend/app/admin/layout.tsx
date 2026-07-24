@@ -48,12 +48,12 @@ import {
   ChevronDown,
   Bell,
   Wallet,
-  ArrowUpFromLine,
   ArrowDownToLine,
   BarChart3,
   Network,
-  FileText,
   Shield,
+  Megaphone,
+  DollarSign,
 } from "lucide-react";
 
 const items = [
@@ -64,90 +64,55 @@ const items = [
   },
   {
     title: "Member List",
-    url: "/admin/members",
+    url: "/admin/member",
     icon: Users,
   },
   {
-    title: "Products",
+    title: "Product",
     icon: Package,
     children: [
-      { title: "Products", url: "/admin/products", icon: null },
-      // { title: "Product Category", url: "/admin/product-category" },
+      { title: "Product", url: "/admin/product", icon: Package },
+      { title: "Product Category", url: "/admin/category", icon: Package },
     ],
   },
   {
-    title: "Management",
-    icon: Users,
+    title: "Cashier",
+    icon: ShoppingCart,
     children: [
-      {
-        title: "Slots",
-        url: "/admin/slots",
-        icon: Network,
-      },
-      {
-        title: "Orders",
-        url: "/admin/orders",
-        icon: ShoppingCart,
-      },
+      { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
+      { title: "Cash In Processing", url: "/admin/cashin", icon: ArrowDownToLine },
+      { title: "Payout Processing", url: "/admin/payout", icon: DollarSign },
+      { title: "Stockist and Branches", url: "/admin/cashier", icon: Users },
     ],
   },
   {
-    title: "Finance",
-    icon: Wallet,
+    title: "Marketing Plan",
+    icon: Megaphone,
     children: [
-      {
-        title: "Cash In",
-        url: "/admin/cashin",
-        icon: ArrowDownToLine,
-      },
-      {
-        title: "Cash Out / Payout",
-        url: "/admin/cashout",
-        icon: ArrowUpFromLine,
-      },
-      {
-        title: "Wallet",
-        url: "/admin/wallet",
-        icon: Wallet,
-      },
+      { title: "All Plan", url: "/admin/marketing", icon: Megaphone },
+      { title: "Unilevel", url: "/admin/unilevel", icon: Network },
+      { title: "Unilevel Two", url: "/admin/unileveltwo", icon: Network },
     ],
   },
   {
     title: "Reports",
+    url: "/admin/report",
     icon: BarChart3,
-    children: [
-      {
-        title: "Reports",
-        url: "/admin/reports",
-        icon: BarChart3,
-      },
-      {
-        title: "Audit Trail",
-        url: "/admin/audit",
-        icon: FileText,
-      },
-    ],
   },
   {
-    title: "Configuration",
+    title: "Maintenance",
+    url: "/admin/maintenance",
+    icon: Shield,
+  },
+  {
+    title: "Manage Settings",
+    url: "/admin/manage-settings",
     icon: Settings,
-    children: [
-      {
-        title: "MLM Plans",
-        url: "/admin/plans",
-        icon: Network,
-      },
-      {
-        title: "Maintenance",
-        url: "/admin/maintenance",
-        icon: Shield,
-      },
-      {
-        title: "Settings",
-        url: "/admin/settings",
-        icon: Settings,
-      },
-    ],
+  },
+  {
+    title: "Admin Settings",
+    url: "/admin/settings",
+    icon: Settings,
   },
 ];
 

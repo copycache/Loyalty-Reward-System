@@ -1,20 +1,13 @@
+// api.ts
+// This file handles all communication with our backend (Laravel) API.
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-interface RequestOptions {
-  method?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  body?: any;
-  headers?: Record<string, string>;
-  token?: string | null;
-}
-
-// Custom error class to carry validation errors from Laravel
+// A custom error type so we can show validation messages from Laravel
 export class ApiError extends Error {
   status: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errors?: Record<string, string[]>;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(message: string, status: number, errors?: Record<string, string[]>) {
     super(message);
     this.name = "ApiError";
@@ -23,63 +16,68 @@ export class ApiError extends Error {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function apiFetch<T = any>(
+// This is the "core" function. Everything else (get, post, upload) uses this.
+async function request<T>(
   endpoint: string,
-  options: RequestOptions = {}
+  method: string,
+  body?: unknown,
+  token?: string | null
 ): Promise<T> {
-  const { method = "GET", body, token } = options;
-
+  // Build the headers we send with every request
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    ...options.headers,
   };
 
+  // If the user is logged in, attach their token
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Make the actual network request
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
+  // If something went wrong, try to read the error message and throw it
+  if (!response.ok) {
+    let errorData: { message?: string; hint?: string; errors?: Record<string, string[]> } = {};
+    try {
+      errorData = await response.json();
+    } catch {
+      // response wasn't JSON, ignore
+    }
+
     throw new ApiError(
-      error.hint || error.message || "Request failed",
-      res.status,
-      error.errors
+      errorData.hint || errorData.message || "Something went wrong",
+      response.status,
+      errorData.errors
     );
   }
 
-  // Handle empty responses (e.g. 204 No Content)
-  const text = await res.text();
+  // Some responses have no body (like a 204 No Content)
+  const text = await response.text();
   return text ? JSON.parse(text) : ({} as T);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function apiGet<T = any>(
-  endpoint: string,
-  token?: string | null
-): Promise<T> {
-  return apiFetch<T>(endpoint, { method: "GET", token });
+// --- Easy-to-use helper functions ---
+
+export function apiGet<T = unknown>(endpoint: string, token?: string | null): Promise<T> {
+  return request<T>(endpoint, "GET", undefined, token);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function apiPost<T = any>(
+export function apiPost<T = unknown>(
   endpoint: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  body?: any,
+  body?: unknown,
   token?: string | null
 ): Promise<T> {
-  return apiFetch<T>(endpoint, { method: "POST", body, token });
+  return request<T>(endpoint, "POST", body, token);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function apiUpload<T = any>(
+// File uploads are a bit different: no JSON headers, and body is FormData
+export async function apiUpload<T = unknown>(
   endpoint: string,
   formData: FormData,
   token?: string | null
@@ -92,22 +90,28 @@ export async function apiUpload<T = any>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
     headers,
-    body: formData,
+    body: formData, // browser sets the correct Content-Type automatically
   });
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
+  if (!response.ok) {
+    let errorData: { message?: string; hint?: string; errors?: Record<string, string[]> } = {};
+    try {
+      errorData = await response.json();
+    } catch {
+      // response wasn't JSON, ignore
+    }
+
     throw new ApiError(
-      error.hint || error.message || "Upload failed",
-      res.status,
-      error.errors
+      errorData.hint || errorData.message || "Upload failed",
+      response.status,
+      errorData.errors
     );
   }
 
-  const text = await res.text();
+  const text = await response.text();
   return text ? JSON.parse(text) : ({} as T);
 }
 

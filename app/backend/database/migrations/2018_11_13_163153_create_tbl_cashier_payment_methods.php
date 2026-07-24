@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCashierPaymentMethods extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_cashier_payment_method', function (Blueprint $table) {
-            $table->id('cashier_payment_method_id');
+        Schema::create('tbl_cashier_payment_method', function (Blueprint $table) 
+        {
+            $table->increments('cashier_payment_method_id');
             $table->string('cashier_payment_method_name');
             $table->tinyInteger('cashier_payment_method_status')->default(0);
         });
@@ -20,9 +23,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cashier_payment_method');
+        //
     }
-};
+}

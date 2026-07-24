@@ -5,7 +5,7 @@ use App\Globals\CashIn;
 use App\Tbl_cash_in_method;
 use App\Models\Tbl_currency;
 
-use Illuminate\Support\Facades\Request;
+use Request;
 use Hash;
 class AdminCashInController extends AdminController
 {

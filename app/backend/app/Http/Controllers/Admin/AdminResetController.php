@@ -2,13 +2,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Tbl_slot;
-use App\Models\User;
+use App\Models\Users;
 use App\Models\Tbl_wallet_log;
 use App\Globals\Audit_trail;
-use App\Globals\Tbl_vortex_slot;
 
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\DB;
+use Request;
+use DB;
 
 class AdminResetController extends AdminController
 {
@@ -41,15 +40,9 @@ class AdminResetController extends AdminController
 				DB::table("tbl_earning_log")->delete();
 				DB::table("tbl_points_log")->delete();
 				DB::table("tbl_unilevel_points")->delete();
-				DB::table("tbl_stairstep_points")->delete();
 				DB::table("tbl_binary_points")->delete();
-				DB::table("tbl_monoline_points")->delete();
-				DB::table("tbl_leveling_bonus_points")->delete();
 				DB::table("tbl_slot_limit")->delete();
-				DB::table("tbl_mlm_universal_pool_bonus_points")->delete();
 				DB::table("tbl_top_recruiter")->delete();
-				DB::table("tbl_vortex_slot")->delete();
-				DB::table("tbl_vortex_token_log")->delete();
 				Tbl_slot::where("slot_id","!=",1)->delete();
 
 				DB::table("tbl_slot")->update(["slot_left_points"=>0]);
@@ -57,11 +50,8 @@ class AdminResetController extends AdminController
 				DB::table("tbl_slot")->update(["slot_wallet"=>0]);
 				DB::table("tbl_slot")->update(["slot_total_earnings"=>0]);
 				DB::table("tbl_slot")->update(["slot_total_payout"=>0]);
-				DB::table("tbl_slot")->update(["slot_stairstep_rank"=>0]);
 				DB::table("tbl_slot")->update(["slot_pairs_per_day_date"=>""]);
 				DB::table("tbl_slot")->update(["slot_pairs_per_day"=>0]);
-				DB::table("tbl_slot")->update(["slot_personal_spv"=>0]);
-				DB::table("tbl_slot")->update(["slot_group_spv"=>0]);
 				DB::table("tbl_slot")->update(["meridiem" => ""]);
 
 									
@@ -69,19 +59,16 @@ class AdminResetController extends AdminController
 				DB::statement("ALTER TABLE tbl_slot AUTO_INCREMENT =  1");
 				DB::statement("ALTER TABLE tbl_wallet_log AUTO_INCREMENT =  1");
 				DB::statement("ALTER TABLE tbl_points_log AUTO_INCREMENT =  1");
-				DB::statement("ALTER TABLE tbl_stairstep_points AUTO_INCREMENT =  1");
 				DB::statement("ALTER TABLE tbl_binary_points AUTO_INCREMENT =  1");
 				DB::statement("ALTER TABLE tbl_tree_placement AUTO_INCREMENT =  1");
 				DB::statement("ALTER TABLE tbl_tree_sponsor AUTO_INCREMENT =  1");
-				DB::statement("ALTER TABLE tbl_vortex_slot AUTO_INCREMENT =  1");
-				DB::statement("ALTER TABLE tbl_vortex_token_log AUTO_INCREMENT =  1");
 			}
 
 			if($member_list == true)
 			{
 				if($slot_list == true)
 				{
-					User::where([
+					Users::where([
 						['type', '=', 'member'],
 						['type', '=', 'cashier'],
 					])->delete();
@@ -105,16 +92,6 @@ class AdminResetController extends AdminController
 				DB::table("tbl_mlm_unilevel_settings")->update(["personal_pv_label"=>"Personal PV"]);
 				DB::table("tbl_mlm_unilevel_settings")->update(["group_pv_label"=>"Group PV"]);
 
-				/*STAIRSTEP*/
-				DB::table("tbl_stairstep_settings")->update(["personal_stairstep_pv_label"=>"Accumulated Personal PV"]);
-				DB::table("tbl_stairstep_settings")->update(["group_stairstep_pv_label"=>"Accumulated Group PV"]);
-				DB::table("tbl_stairstep_settings")->update(["earning_label_points"=>"Override Points"]);
-				DB::table("tbl_stairstep_settings")->update(["sgpv_to_wallet_conversion"=>0]);
-				DB::table("tbl_stairstep_settings")->update(["personal_as_group"=>0]);
-				DB::table("tbl_stairstep_settings")->update(["live_update"=>0]);
-				DB::table("tbl_stairstep_rank")->delete();
-				DB::statement("ALTER TABLE tbl_stairstep_rank AUTO_INCREMENT =  1");
-
 				/*BINARY*/
 				DB::table("tbl_binary_settings")->update(["gc_pairing_count"=>0]);
 				DB::table("tbl_binary_settings")->update(["cycle_per_day"=>1]);
@@ -124,26 +101,6 @@ class AdminResetController extends AdminController
 				DB::statement("ALTER TABLE tbl_binary_pairing AUTO_INCREMENT =  1");
 
 
-			}
-
-			if($generated_codes == true)
-			{
-				if($slot_list == true)
-				{
-					DB::table("tbl_codes")->delete();
-					DB::table("tbl_inventory")->update(["inventory_quantity"=>0]);
-					DB::statement("ALTER TABLE tbl_stairstep_rank AUTO_INCREMENT =  1");
-				}
-				else
-				{
-					DB::table("tbl_codes")->where("code_used",0)->where("code_sold",0)->delete();
-				}
-			}
-
-			if($product_list == true)
-			{
-				DB::table("tbl_item")->delete();
-				DB::statement("ALTER TABLE tbl_stairstep_rank AUTO_INCREMENT =  1");
 			}
 
 			$return["status"]             = "success"; 

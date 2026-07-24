@@ -4,22 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Globals\Code;
 use App\Globals\Slot;
-use App\Mail\EmailActivation;
 use App\Globals\Country;
 use App\Globals\Member;
 use App\Models\Tbl_codes;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Request;
+use Request;
 use App\Models\Tbl_slot;
 use App\Models\Tbl_other_settings;
-use App\Models\User;
-use App\Models\Tbl_dealer;
-use App\Models\Tbl_retailer;
-use App\Models\Tbl_item;
-use App\Models\Tbl_verification_codes;
 
 use Crypt;
-use Mail;
 class RegisterController extends Controller
 {
     public function get_country()
@@ -27,24 +19,6 @@ class RegisterController extends Controller
         $response = Country::get();
 
         return response()->json($response, 200);
-    }
-
-    public function check_dealers_code()
-    {
-        $dealer_code  = Request::input("dealer_code");
-        $dealer       = Tbl_dealer::where("dealer_code",$dealer_code )->first();
-        if($dealer)
-        {
-            $response["status"]  = 1;
-            $response["message"] = "Success";
-        }
-        else
-        {
-            $response["status"]  = 0;
-            $response["message"] = "Invalid dealers link.";
-        }
-
-        return $response;
     }
 
     public function new_register()
@@ -80,9 +54,8 @@ class RegisterController extends Controller
                             'slot_id' => $slot_info->slot_id,
                         ];
                         $register_your_slot = Tbl_other_settings::where("key", "register_your_slot")->first()->value ?? 1;
-                        $register_on_slot = Tbl_other_settings::where("key", "register_on_slot")->first()->value ?? 1;
 
-                        if ($register_your_slot == 0 && $register_on_slot == 1) {
+                        if ($register_your_slot == 0) {
                             $check_code = Code::get_membership_code_details($pass["code"], $pass["pin"]);
                             if ($check_code && $check_code->slot_qty == 1) {
                                 $count_activated_slot = Tbl_slot::where("slot_owner", $slot_info->slot_owner)->where("membership_inactive", 0)->count();
@@ -116,15 +89,9 @@ class RegisterController extends Controller
         $response = Member::check_credentials(Request::input('member'));
         return json_encode($response);
     }
-
     public function get_register_settings()
     {
-        $keys = ["register_facebook", "register_google", "registration_with_activation"];
-        $settings = Tbl_other_settings::whereIn("key", $keys)->get()->keyBy('key');
-        
-        $response["facebook"] = $settings->get("register_facebook");
-        $response["google"]   = $settings->get("register_google");
-        $response["registration_activation"]   = $settings->get("registration_with_activation");
+        $response["registration_activation"]   = Tbl_other_settings::where("key","registration_with_activation")->first();
         
         return json_encode($response);
     }
@@ -172,7 +139,7 @@ class RegisterController extends Controller
         {
             $response = Tbl_slot::where('slot_no',$slot_no)
                       ->leftjoin('users','users.id','=','tbl_slot.slot_owner')
-                      ->select('slot_no','first_name','middle_name','last_name', 'email')
+                      ->select('slot_no','first_name','middle_name','last_name')
                       ->first();
         }
         else

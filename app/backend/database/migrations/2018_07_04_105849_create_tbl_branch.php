@@ -1,35 +1,36 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblBranch extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_branch', function (Blueprint $table) {
-            $table->dateTime('branch_date_created');
-            $table->id('branch_id');
+        Schema::create('tbl_branch', function (Blueprint $table) 
+        {
+            $table->increments('branch_id');
             $table->string('branch_name');
             $table->string('branch_type');
             $table->string('branch_location');
-            $table->tinyInteger('archived')->default(0);
-            $table->unsignedInteger('stockist_level')->nullable();
-            $table->tinyInteger('add_member')->default(0);
-            $table->tinyInteger('create_slot')->default(0);
-            $table->tinyInteger('custom_code')->default(0);
+            $table->string('archived')->default(0);
+
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_branch');
+        //
     }
-};
+}

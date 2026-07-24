@@ -1,10 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use App\Models\Tbl_slot;
-use Illuminate\Support\Facades\Request;
 
 class AdminNegativeWalletController extends AdminController
 {

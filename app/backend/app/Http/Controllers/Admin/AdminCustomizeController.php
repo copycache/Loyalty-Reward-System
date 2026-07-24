@@ -2,10 +2,10 @@
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Auth;
-use Illuminate\Support\Facades\Request;
+use Request;
 use File;
 use Storage;
-use Illuminate\Support\Facades\DB;
+use DB;
 
 use App\Globals\Audit_trail;
 

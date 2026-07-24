@@ -40,6 +40,8 @@ import {
   CheckCircle,
   XCircle,
   PlayCircle,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,6 +74,7 @@ export default function AdminCashInPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currencyFilter, setCurrencyFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -81,6 +84,7 @@ export default function AdminCashInPage() {
 
   const [methods, setMethods] = useState<any[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
+  const queryString = new URLSearchParams({ cash_in_owner: search, cash_in_method_id: methodFilter, cash_in_currency: currencyFilter, cash_in_status: statusFilter, cash_in_date_from: dateFrom, cash_in_date_to: dateTo }).toString();
 
   // Process modal
   const [processOpen, setProcessOpen] = useState(false);
@@ -100,6 +104,7 @@ export default function AdminCashInPage() {
       if (statusFilter) body.cash_in_status = statusFilter;
       if (search) body.cash_in_owner = search;
       if (methodFilter) body.cash_in_method_id = methodFilter;
+      if (currencyFilter) body.cash_in_currency = currencyFilter;
       if (dateFrom) body.cash_in_date_from = dateFrom;
       if (dateTo) body.cash_in_date_to = dateTo;
 
@@ -203,6 +208,14 @@ export default function AdminCashInPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <a href={`/api/export/cashin/csv?${queryString}`} target="_blank"
+            className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-accent">
+            <FileSpreadsheet className="h-4 w-4 mr-2" /> Export as CSV
+          </a>
+          <a href={`/api/export/cashin/pdf?${queryString}`} target="_blank"
+            className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-accent">
+            <FileText className="h-4 w-4 mr-2" /> Export as PDF
+          </a>
           <Button variant="outline" onClick={openMethodsManagement}>
             Cash-In Methods
           </Button>
@@ -242,6 +255,18 @@ export default function AdminCashInPage() {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={currencyFilter || "all"} onValueChange={(v) => setCurrencyFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Currencies</SelectItem>
+                {currencies.map((c: any, i: number) => (
+                  <SelectItem key={i} value={c.currency_abbreviation}>{c.currency_abbreviation}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -426,18 +451,36 @@ export default function AdminCashInPage() {
 
       {/* Methods Management Modal */}
       <Dialog open={methodsOpen} onOpenChange={setMethodsOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cash-In Methods</DialogTitle>
           </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            <select className="h-10 rounded-md border px-3 text-sm flex-1" value={methodFilter || "all"} onChange={(e) => setMethodFilter(e.target.value === "all" ? "" : e.target.value)}>
+              <option value="all">All Categories</option>
+              {methodCategories.map((c: any, i: number) => (
+                <option key={i} value={c.cash_in_method_category}>{c.cash_in_method_category}</option>
+              ))}
+            </select>
+            <select className="h-10 rounded-md border px-3 text-sm flex-1" value={currencyFilter || "all"} onChange={(e) => setCurrencyFilter(e.target.value === "all" ? "" : e.target.value)}>
+              <option value="all">All Currencies</option>
+              {currencies.map((c: any, i: number) => (
+                <option key={i} value={c.currency_abbreviation}>{c.currency_abbreviation}</option>
+              ))}
+            </select>
+            <Button size="sm">Add Method</Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Category</TableHead>
-                <TableHead>Name</TableHead>
+                <TableHead>Method Name</TableHead>
                 <TableHead>Currency</TableHead>
-                <TableHead>Fee</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Charge (Fixed)</TableHead>
+                <TableHead className="text-right">Charge (%)</TableHead>
+                <TableHead className="text-right">Service Charge</TableHead>
+                <TableHead>Thumbnail</TableHead>
+                <TableHead>Active</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -447,7 +490,10 @@ export default function AdminCashInPage() {
                     <TableCell>{m.cash_in_method_category || "—"}</TableCell>
                     <TableCell>{m.cash_in_method_name || "—"}</TableCell>
                     <TableCell>{m.cash_in_method_currency || "PHP"}</TableCell>
-                    <TableCell>{m.cash_in_method_fee || "0"}</TableCell>
+                    <TableCell className="text-right">{m.cash_in_charge_fixed || "0"}</TableCell>
+                    <TableCell className="text-right">{m.cash_in_charge_percentage || "0"}</TableCell>
+                    <TableCell className="text-right">{m.cash_in_service_charge || "0"}</TableCell>
+                    <TableCell>{m.cash_in_method_thumbnail ? <img src={m.cash_in_method_thumbnail} className="h-8 w-8 object-contain" /> : "—"}</TableCell>
                     <TableCell>
                       <Badge className={!m.is_archived ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                         {!m.is_archived ? "Active" : "Inactive"}
@@ -457,13 +503,16 @@ export default function AdminCashInPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     No methods configured
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMethodsOpen(false)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

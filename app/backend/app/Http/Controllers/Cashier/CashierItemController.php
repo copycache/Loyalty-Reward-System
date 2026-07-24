@@ -15,7 +15,6 @@ use App\Models\Tbl_branch;
 use App\Models\Tbl_inventory;
 use App\Models\Tbl_item;
 use App\Models\Tbl_codes;
-use App\Models\Tbl_item_stairstep_rank_discount;
 use App\Models\Tbl_mlm_plan;
 use App\Models\Tbl_slot;
 use App\Models\Tbl_orders;
@@ -23,15 +22,13 @@ use App\Models\Tbl_receipt;
 
 use App\Models\Tbl_tree_placement;
 use App\Models\Tbl_user_process;
-use PDF;
-use Excel;
-use App\Models\User;
+use App\Models\Users;
 use App\Globals\Slot;
-use Illuminate\Support\Facades\DB;
+use DB;
 use Carbon\Carbon;
 use App\Models\Tbl_item_membership_discount;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Validator;
+use Request;
+use Validator;
 
 class CashierItemController extends CashierController
 {
@@ -61,7 +58,7 @@ class CashierItemController extends CashierController
     }
     public function checkout()
     {
-        $user = User::where('id', Request::user()->id)->first();
+        $user = Users::where('id', Request::user()->id)->first();
         if($user->type == "cashier")
         {
             $cashier   = Request::user()->id;
@@ -83,7 +80,7 @@ class CashierItemController extends CashierController
         $gc_currency = DB::table('tbl_currency')->where('currency_name', 'Gift Card')->first();
         $response['slot'] = Tbl_slot::where('slot_owner', $data['user_id'])->Wallet($currency->currency_id)->where('slot_status', 'active')->first();
         $response['other_slots'] = Tbl_slot::where('slot_owner', $data['user_id'])->where('slot_status', 'active')->get();
-        $response['user'] = User::where('id', $data['user_id'])->first();
+        $response['user'] = Users::where('id', $data['user_id'])->first();
         $response['address'] = Tbl_address::where('user_id', $data['user_id'])->where('is_default', 1)->first();
         $response['slot_gc'] = Tbl_slot::where('slot_owner', $data['user_id'])->Wallet($gc_currency->currency_id)->where('slot_status', 'active')->first();
         return response()->json($response);
@@ -120,10 +117,10 @@ class CashierItemController extends CashierController
     }
     public function get_user()
     {
-        $check_user_details    =  User::where('id', Request::user()->id)->first();
+        $check_user_details    =  Users::where('id', Request::user()->id)->first();
         if($check_user_details->type == 'cashier')
         {
-            $get_user_details    =  User::where('id', Request::user()->id)->join('tbl_cashier', 'tbl_cashier.cashier_user_id', '=', 'users.id')->first();
+            $get_user_details    =  Users::where('id', Request::user()->id)->join('tbl_cashier', 'tbl_cashier.cashier_user_id', '=', 'users.id')->first();
             $branch_details = Tbl_branch::where('branch_id', $get_user_details->cashier_branch_id)->first();
             $return['name']  = $get_user_details->name;
             $return['branch_id'] = $get_user_details->cashier_branch_id;
@@ -134,7 +131,7 @@ class CashierItemController extends CashierController
         }
         else
         {
-            $get_user_details    =  User::where('id', Request::user()->id)->join('tbl_stockist', 'tbl_stockist.stockist_user_id', '=', 'users.id')->first();
+            $get_user_details    =  Users::where('id', Request::user()->id)->join('tbl_stockist', 'tbl_stockist.stockist_user_id', '=', 'users.id')->first();
             $branch_details = Tbl_branch::where('branch_id', $get_user_details->stockist_branch_id)->first();
             $return['name']  = $get_user_details->name;
             $return['branch_id'] = $get_user_details->stockist_branch_id;
@@ -144,18 +141,39 @@ class CashierItemController extends CashierController
         
         return response()->json($return);
     }
+    
     public function process_sale()
     {
-        $payment    = Request::input('payment');
-        $items      = Request::input('items');
-        $slot       = Request::input('slot');
-        $pick_up       = Request::input('pick_up');
-        $manager_discount   = Request::input('manager_discount');
-        $vat            = Request::input('vat');
-        $remarks       = Request::input('remarks');
-        $response   = Item::cashier_sale($payment, $items, $slot, $pick_up, $vat , $manager_discount, $remarks);
-        return response()->json($response);
+        try {
+            $payment    = Request::input('payment', []);
+            $items      = Request::input('items', []);
+            $slot       = Request::input('slot', []);
+            $pick_up    = Request::input('pick_up', 1);
+            $manager_discount = floatval(Request::input('manager_discount', 0));
+            $vat        = floatval(Request::input('vat', 0));
+            $remarks    = Request::input('remarks', '');
+
+            if (empty($payment)) {
+                return response()->json(['status' => 'error', 'status_message' => 'No payment found'], 400);
+            }
+
+            if (empty($items)) {
+                return response()->json(['status' => 'error', 'status_message' => 'No items found'], 400);
+            }
+
+            if (empty($slot) || !isset($slot['slot_id'])) {
+                return response()->json(['status' => 'error', 'status_message' => 'Invalid slot data'], 400);
+            }
+
+            $response = Item::cashier_sale($payment, $items, $slot, $pick_up, $vat, $manager_discount, $remarks);
+            return response()->json($response);
+
+        } catch (\Throwable $e) {
+            \Log::error('Error in process_sale: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['status' => 'error', 'status_message' => $e->getMessage()], 500);
+        }
     }
+
     public function get_claim_code_list()
     {
         $response   = Cashier::get_claim_codes(Request::input());
@@ -220,7 +238,7 @@ class CashierItemController extends CashierController
                 $slot = Slot::create_slot($data, $slot_code);
                 if($slot['status_code'] < 300)
                 {
-                    $buyer = User::join('tbl_slot', 'tbl_slot.slot_owner', '=', 'users.id')->where('tbl_slot.slot_id', $slot['status_data_id_inc'])->first();
+                    $buyer = Users::join('tbl_slot', 'tbl_slot.slot_owner', '=', 'users.id')->where('tbl_slot.slot_id', $slot['status_data_id_inc'])->first();
                     $item['item_id'] = $slot_info['membership_kit'];
                     $item['quantity'] = 1;
                     $item['discounted_price'] = $item_sold->item_price;
@@ -315,7 +333,7 @@ class CashierItemController extends CashierController
 
     public function select_for_slot_creation()
     {
-        $response = User::where('id', Request::input('user_id'))
+        $response = Users::where('id', Request::input('user_id'))
         ->JoinSlot()
         ->leftJoin("tbl_slot as sponsor","sponsor.slot_id","=","tbl_slot.slot_sponsor")
         ->select("tbl_slot.*","users.*","sponsor.slot_no as slot_sponsor_no")
@@ -339,7 +357,7 @@ class CashierItemController extends CashierController
     }
     public function check_stocks()
     {
-        $check_user = User::where('id', Request::user()->id)->first();
+        $check_user = Users::where('id', Request::user()->id)->first();
         if($check_user->type == "cashier")
         {
             $cashier = Tbl_cashier::where('cashier_user_id', Request::user()->id)->first();
@@ -653,69 +671,55 @@ class CashierItemController extends CashierController
     }
     
     public static function get_customer_discount($slot_id, $item_id)
-	{
-		$slot = Tbl_slot::where('slot_id', $slot_id)->first();
-		if($slot->slot_type == "SS")
-		{
-			$stockist = DB::table('tbl_stockist')->where('stockist_user_id', $slot->slot_owner)->first();
-			$stockist_discount = DB::table('tbl_item_stockist_discount')->where('item_id', $item_id)->where('stockist_level_id', $stockist->stockist_level)->first();
-			if($stockist_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'stockist';
-				$discount['percentage']	= $stockist_discount->discount;
-			}
-			else
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'none';
-				$discount['percentage']	= 0;
-			}
-		}
-		else
-		{
-			$check_membership_discount = Tbl_item_membership_discount::where('membership_id', $slot->slot_membership)->where('item_id', $item_id)->first();
-			if($check_membership_discount)
-			{
-				$membership_discount = $check_membership_discount->discount;
-			}
-			else
-			{
-				$membership_discount = 0;
-			}
+{
+    $slot = Tbl_slot::where('slot_id', $slot_id)->first();
 
-			$check_rank_discount = Tbl_item_stairstep_rank_discount::where('stairstep_rank_id', $slot->slot_stairstep_rank)->where('item_id', $item_id)->first();
+    if ($slot->slot_type == "SS")
+    {
+        $stockist = DB::table('tbl_stockist')->where('stockist_user_id', $slot->slot_owner)->first();
+        $stockist_discount = DB::table('tbl_item_stockist_discount')
+            ->where('item_id', $item_id)
+            ->where('stockist_level_id', $stockist->stockist_level)
+            ->first();
 
-			if($check_rank_discount)
-			{
-				$rank_discount = $check_rank_discount->discount;
-			}
-			else
-			{
-				$rank_discount = 0;
-			}
+        if ($stockist_discount)
+        {
+            $discount['item_id'] = $item_id;
+            $discount['type'] = 'stockist';
+            $discount['percentage'] = $stockist_discount->discount;
+        }
+        else
+        {
+            $discount['item_id'] = $item_id;
+            $discount['type'] = 'none';
+            $discount['percentage'] = 0;
+        }
+    }
+    else
+    {
+        // Get membership discount only
+        $check_membership_discount = Tbl_item_membership_discount::where('membership_id', $slot->slot_membership)
+            ->where('item_id', $item_id)
+            ->first();
 
-			if($membership_discount > $rank_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'membership';
-				$discount['percentage']	= $membership_discount;
-			}
-			elseif($rank_discount > $membership_discount)
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'rank';
-				$discount['percentage']	= $rank_discount;
-			}
-			else
-			{
-				$discount['item_id'] = $item_id;
-				$discount['type'] 	 = 'none';
-				$discount['percentage']	= 0;
-			}
-		}
-		return $discount;
-	}
+        if ($check_membership_discount)
+        {
+            $membership_discount = $check_membership_discount->discount;
+            $discount['item_id'] = $item_id;
+            $discount['type'] = 'membership';
+            $discount['percentage'] = $membership_discount;
+        }
+        else
+        {
+            $discount['item_id'] = $item_id;
+            $discount['type'] = 'none';
+            $discount['percentage'] = 0;
+        }
+    }
+
+    return $discount;
+}
+
     
     public function get_addresses()
 	{

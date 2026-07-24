@@ -19,21 +19,6 @@ class Module
         $c_active = CashOut::cashout_settings();
         $module = Tbl_module::where('module_type','member')->get();
 
-
-        if($slot_id)
-        {
-            $slot = Tbl_slot::where("slot_id",$slot_id)->first();
-            if($slot)
-            {
-                if($slot->is_retailer == 1)
-                {
-                   $allowed_module = ["mywallet","cashin","eloading"]; 
-                   $module         = Tbl_module::where('module_type','member')->whereIn("module_alias",$allowed_module)->get(); 
-                }
-            }
-        }
-
-
         foreach ($module as $key => $value) 
         {
             if($value->module_alias == "cashout")

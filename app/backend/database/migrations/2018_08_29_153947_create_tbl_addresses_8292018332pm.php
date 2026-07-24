@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblAddresses8292018332pm extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_address', function (Blueprint $table) {
-            $table->id('address_id');
+        Schema::create('tbl_address', function (Blueprint $table) 
+        {
+            $table->increments('address_id');
             $table->string('address_postal_code');
             $table->string('regCode');
             $table->string('provCode');
@@ -22,15 +25,16 @@ return new class extends Migration
             $table->tinyInteger('is_default')->default(0);
             $table->tinyInteger('archived')->default(0);
             $table->integer('user_id');
-            $table->string('island_group')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_address');
+        //
     }
-};
+}

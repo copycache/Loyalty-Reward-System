@@ -1,24 +1,29 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCashierSales extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_cashier_sales', function (Blueprint $table) {
-            $table->id('cashier_sales_id');
+        Schema::create('tbl_cashier_sales', function (Blueprint $table) 
+        {
+            $table->increments('cashier_sales_id');
             $table->text('items');
             $table->double('subtotal');
             $table->string('discount_type');
+            $table->double('discount')->default(0);
             $table->double('change')->default(0);
             $table->integer('cashier_id');
             $table->text('payment_issued');
+            $table->double('grandtotal');
             $table->dateTime('sales_date_transacted');
             $table->integer('transaction_currency');
         });
@@ -26,9 +31,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cashier_sales');
+        //
     }
-};
+}

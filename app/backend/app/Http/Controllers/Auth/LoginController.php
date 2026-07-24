@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Globals\Visitor;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
+use App\Globals\Visitor;
 class LoginController extends Controller
 {
     /*
@@ -22,8 +23,18 @@ class LoginController extends Controller
 
     use AuthenticatesUsers;
 
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
     protected $redirectTo = '/home';
 
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
@@ -31,10 +42,10 @@ class LoginController extends Controller
 
     protected function validateLogin(Request $request)
     {
-        $this->validate($request, [
-            $this->username() => 'required',
-            'password' => 'required'
-        ]);
+        $validate[$this->username()] = 'required';
+        $validate['password']        = 'required';
+
+        $this->validate($request, $validate);
     }
 
     public function login(Request $request)
@@ -42,7 +53,8 @@ class LoginController extends Controller
         Visitor::use_the_counter();
         $this->validateLogin($request);
 
-        if ($this->attemptLogin($request)) {
+        if ($this->attemptLogin($request)) 
+        {
             $user = $this->guard()->user();
             $user->generateToken();
             return response()->json($user->toArray());
@@ -55,11 +67,14 @@ class LoginController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        if ($user) {
+        if ($user) 
+        {
             $user->api_token = null;
             $user->save();
         }
 
-        return response()->json(['message' => 'User logged out.']);
+        $return['message'] = 'User logged out.';
+
+        return response()->json($return, 200);
     }
 }

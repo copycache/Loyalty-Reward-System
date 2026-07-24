@@ -13,7 +13,7 @@ class User_process
 {
     public static function check($owner_id)
     {
-    		$return = 0;
+    		$return = false;
     		$user_process_level = 1;
 
 			Tbl_user_process::where("user_id",$owner_id)->delete();
@@ -29,7 +29,7 @@ class User_process
 				$count_process_before = Tbl_user_process::where("user_id",$owner_id)->where("level_process", ($user_process_level - 1) )->count();
 				if($count_process_before != 1)
 				{
-					$return = 1;
+					$return = true;
 				}
 			}
 

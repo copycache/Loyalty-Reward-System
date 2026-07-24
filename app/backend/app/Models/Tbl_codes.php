@@ -8,23 +8,23 @@ class Tbl_codes extends Model
 {
     use HasFactory;
 
-protected $table = 'tbl_codes';
-protected $primaryKey = "code_id";
-public $timestamps = false;
-protected $guarded = [];
+    protected $table = 'tbl_codes';
+    protected $primaryKey = "code_id";
+    public $timestamps = false;
+    protected $guarded = [];
 
 
     public function scopeInventory($query)
     {
-     return $query->join('tbl_inventory', 'tbl_inventory.inventory_id', '=', 'tbl_codes.code_inventory_id');
+    	 return $query->join('tbl_inventory', 'tbl_inventory.inventory_id', '=', 'tbl_codes.code_inventory_id');
     }
     public function scopeInventoryItem($query)
     {
-     return $query->join('tbl_item', 'tbl_item.item_id', '=', 'tbl_inventory.inventory_item_id');
+    	 return $query->join('tbl_item', 'tbl_item.item_id', '=', 'tbl_inventory.inventory_item_id');
     }
     public function scopeInventoryItemMembership($query)
     {
-     return $query->join('tbl_membership', 'tbl_membership.membership_id', '=', 'tbl_item.membership_id');
+    	 return $query->join('tbl_membership', 'tbl_membership.membership_id', '=', 'tbl_item.membership_id');
     }
     
     public function scopeCheckIfKit($query)

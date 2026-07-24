@@ -1,30 +1,32 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCashInMethodCategory extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('tbl_cash_in_method_category', function (Blueprint $table) {
-            $table->id('cash_in_method_category_id')->index();
+            $table->increments('cash_in_method_category_id')->index();
             $table->string('cash_in_method_category')->unique();
             $table->integer('is_archived')->default(0);
-            $table->double('cash_in_method_service_charge')->default(0);
-            $table->longText('crypto_thumbnail')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_cash_in_method_category');
+        //
     }
-};
+}

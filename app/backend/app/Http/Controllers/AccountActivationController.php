@@ -2,57 +2,78 @@
 
 namespace App\Http\Controllers;
 
+use Request;
+use DB;
 use App\Mail\EmailActivation;
+use App\Models\Users;
 use App\Models\Tbl_verification_codes;
-use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Str;
+
+use Mail;
+use Crypt;
 
 class AccountActivationController extends Controller
 {
     public function resend_verification()
     {
-        $user = Request::user();
-        $code = Str::random(8);
+        $random                             = str_shuffle('abcdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ1234567890');
+        $code                               = substr($random, 0, 8);
+        $insert['user_id']                  = Request::user()->id;
+        $insert['code']                     = $code;
+        $insert['date_generate']            = Carbon::now();
 
-        Tbl_verification_codes::insert([
-            'user_id' => $user->id,
-            'code' => $code,
-            'date_generate' => Carbon::now(),
-        ]);
+        Tbl_verification_codes::insert($insert);
 
-        Mail::to($user->email)->send(new EmailActivation(Crypt::encryptString($user->id), $user->name, $code));
+        $id                                     = Crypt::encryptString(Request::user()->id);
+        $name                                   = Request::user()->name;
+        $email                                  = Request::user()->email;
 
-        return ['status_message' => 'Please check your email to verify your Account!'];
+        Mail::to($email)->send(new EmailActivation($id, $name, $code));
+
+        $response['status_message']             = 'Please check your email to verify your Account!';
+        return $response;
+
     }
     public function activate_account()
     {
-        $user_id = Crypt::decryptString(Request::input('user_id'));
-        User::where('id', $user_id)->update(['email_verified' => 1]);
         
-        return ['verified' => Crypt::encryptString(1)];
+        $user_id                                = Crypt::decryptString(Request::input('user_id'));
+        $response['verified']                   = Crypt::encryptString(1);
+        
+        $update['email_verified']               = 1;
+        Users::where('id', $user_id)->update($update);
+        
+        return $response;
     }
     public function verify_account()
     {
-        $user_id = Crypt::decryptString(Request::input('user_id'));
-        $code = Request::input('code');
+        $user_id                                = Crypt::decryptString(Request::input('user_id'));
+        $code                                   = Request::input('code');
 
-        $verification = Tbl_verification_codes::where(['user_id' => $user_id, 'code' => $code])->first();
+        $check_if_exist                         = Tbl_verification_codes::where('user_id',$user_id)->where('code',$code)->first();
 
-        if (!$verification) {
-            return 0;
-        }
+       if($check_if_exist)
+       {
+           if($check_if_exist->status == 0)
+           {
+               $update['date_used']             = Carbon::now(); 
+               $update['status']                = 1;
+               
+               Tbl_verification_codes::where('code',$code)->update($update);
+               Users::where('id',$user_id)->update(['email_verified' => 1]);
 
-        if ($verification->status != 0) {
-            return 2;
-        }
+               $response                        = 1;
+           }
+           else
+           {
+               $response                        = 2;
+           }
+       }
+       else
+       {
+           $response                            = 0;
+       }
 
-        Tbl_verification_codes::where('code', $code)->update(['date_used' => Carbon::now(), 'status' => 1]);
-        User::where('id', $user_id)->update(['email_verified' => 1]);
-
-        return 1;
+       return $response;
     }
 }

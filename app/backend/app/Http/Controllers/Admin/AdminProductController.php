@@ -7,9 +7,9 @@ use App\Models\Tbl_cashier;
 use App\Models\Tbl_codes;
 use App\Models\Tbl_inventory;
 use App\Models\Tbl_item;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Request;
+use App\Models\Users;
+use DB;
+use Request;
 
 class AdminProductController extends AdminController
 {
@@ -85,16 +85,7 @@ class AdminProductController extends AdminController
         $response = Item::check_rel_item_kit($item_id, $branch_id);
         return response()->json($response, 200);
     }
-    public function load_island_group()
-    {
-        $response = Item::load_island_group();
-        return response()->json($response, 200);
-    }
-    public function load_shipping_fee()
-    {
-        $response = Item::load_shipping_fee();
-        return response()->json($response, 200);
-    }
+    
     public function get_category_list()
     {
         $response = Item::get_category_list();
@@ -110,13 +101,6 @@ class AdminProductController extends AdminController
     public function highest_membership_list()
     {
         $response = Item::highest_membership_list();
-        return response()->json($response, 200);
-    }
-    public function load_team_sales_bonus_level()
-    {
-        $item_id = Request::input('item_id');
-
-        $response = Item::load_team_sales_bonus_level($item_id);
         return response()->json($response, 200);
     }
 

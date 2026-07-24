@@ -14,7 +14,7 @@ class Tbl_module extends Model
 	protected $primaryKey = "module_id";
     public $timestamps = false;
 
-     public function scopeModule($query)
+    public function scopeModule($query)
     {
     	$query ->leftJoin('tbl_module_access',	'tbl_module_access.module_id',	 	'=','tbl_module.module_id');
     	return $query;

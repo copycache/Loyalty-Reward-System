@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblImagesTable1172018159pm extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_images', function (Blueprint $table) {
-            $table->id('image_id');
+        Schema::create('tbl_images', function (Blueprint $table) 
+        {
+            $table->increments('image_id');
             $table->string('image_path');
             $table->string('image_type');
             $table->text('image_description');
@@ -22,9 +25,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_images');
+        //
     }
-};
+}

@@ -1,20 +1,24 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblOverridePoints extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        if (!Schema::hasTable('tbl_override_points')) {
-            Schema::create('tbl_override_points', function (Blueprint $table) {
-                $table->id('override_points_id');
-                $table->unsignedInteger('slot_id');
+        if (!Schema::hasTable('tbl_override_points'))
+        {            
+            Schema::create('tbl_override_points', function (Blueprint $table) 
+            {
+                $table->increments('override_points_id');
+                $table->integer('slot_id')->unsigned();
                 $table->double('override_amount')->default(0);
                 $table->tinyInteger('distributed')->default(0);
                 $table->dateTime('override_points_date_created');
@@ -24,9 +28,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_override_points');
+        //
     }
-};
+}

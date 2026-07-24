@@ -1,18 +1,13 @@
 <?php
 namespace App\Globals;
 
-use DB;
 use Carbon\Carbon;
 
 use App\Globals\MLM;
-use App\Globals\Log;
 
 use App\Models\Tbl_codes;
 use App\Models\Tbl_membership;
 use App\Models\Tbl_slot;
-use App\Models\Tbl_currency;
-use App\Models\Tbl_mlm_plan;
-use App\Models\Tbl_mlm_incentive_bonus;
 
 
 class Product
@@ -20,6 +15,7 @@ class Product
 	public static function activate_code($data)
 	{
 		$slot_info	= Tbl_slot::where('slot_id', $data['slot_id'])->first();
+		
 
 		$check_restricted = Tbl_membership::where('membership_id', $slot_info->slot_membership)->first();
 		if($check_restricted)
@@ -90,14 +86,9 @@ class Product
 				$update["code_date_used"] 	= Carbon::now();
 				// $update["code_date_sold"] 	= Carbon::now();
 				Tbl_codes::where("code_id",$code->code_id)->update($update);
-				/*INSERT CASHBACK*/
+				
 				MLM::purchase($slot_id,$code->item_id);
-				if($code->bind_membership_id != 0)
-				{
-					// dd(123124);
-					MLM::create_entry($slot_id,$code->bind_membership_id);
-					MLM::placement_entry($slot_id,null,$code->bind_membership_id);
-				}
+				
 				$return  = "success"; 
 			}
 			else

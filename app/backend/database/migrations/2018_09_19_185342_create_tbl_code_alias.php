@@ -1,26 +1,31 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblCodeAlias extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_code_alias', function (Blueprint $table) {
-            $table->string('code_alias_name')->default('DGM');
-        });
+            Schema::create('tbl_code_alias', function (Blueprint $table) 
+            {
+                $table->string('code_alias_name')->default("DGM");
+            }); 
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_code_alias');
+        //
     }
-};
+}

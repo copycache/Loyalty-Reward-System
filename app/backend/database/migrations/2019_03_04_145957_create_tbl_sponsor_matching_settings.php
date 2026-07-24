@@ -1,27 +1,32 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateTblSponsorMatchingSettings extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tbl_sponsor_matching', function (Blueprint $table) {
-            $table->id('tbl_sponsor_matching_id');
+        Schema::create("tbl_sponsor_matching",function ( Blueprint $table )
+        {
+            $table->increments('tbl_sponsor_matching_id');
             $table->double('sponsor_matching_percent');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('tbl_sponsor_matching');
+        //
     }
-};
+}

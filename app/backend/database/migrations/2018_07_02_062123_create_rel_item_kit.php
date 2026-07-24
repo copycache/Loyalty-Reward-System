@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-return new class extends Migration
+class CreateRelItemKit extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('rel_item_kit', function (Blueprint $table) {
-            $table->integer('item_id');
+        Schema::create('rel_item_kit', function (Blueprint $table) 
+        {
+            $table->increments('item_id');
             $table->integer('item_inclusive_id');
             $table->integer('item_qty')->default(1);
         });
@@ -20,9 +23,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('rel_item_kit');
+        //
     }
-};
+}

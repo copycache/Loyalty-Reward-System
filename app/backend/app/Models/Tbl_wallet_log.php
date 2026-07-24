@@ -20,11 +20,6 @@ class Tbl_wallet_log extends Model
     	 return $query->rightJoin('tbl_cash_in_proofs', 'tbl_cash_in_proofs.cash_in_proof_id', '=', 'tbl_wallet_log.transaction_id')->where("tbl_wallet_log.wallet_log_details", "CASH IN");
     }
 
-    public function scopeEloadLogs($query)
-    {
-         return $query->leftJoin('tbl_eloading_log', 'tbl_eloading_log.wallet_log_id', '=', 'tbl_wallet_log.wallet_log_id');
-    }
-
     public function scopeCashOut($query)
     {
     	 return $query->join('tbl_cash_out_list', 'tbl_cash_out_list.cash_out_id', '=', 'tbl_wallet_log.transaction_id')->where("tbl_wallet_log.wallet_log_details", "CASH OUT");
@@ -40,15 +35,7 @@ class Tbl_wallet_log extends Model
     {
         return $query->leftJoin("tbl_label","plan_code","=",DB::raw("REPLACE(wallet_log_details, ' ', '_')"));
     }
-    public function scopeEload($query)
-    {
-        $query ->where(function($query)
-        {
-            $query->where('wallet_log_details','like','%ELOAD%');
-        });
-
-        return $query;
-    }
+    
     public function scopeGetWeekWalletIncome($query)
     {
         $query  ->where('wallet_log_date_created', '>', Carbon::now()->startOfWeek())
