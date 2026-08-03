@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { apiPost } from "@/lib/api";
+import { apiPost, resolveAssetUrl } from "@/lib/api";
 import { useCartStore } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,9 +25,9 @@ interface Product {
 }
 
 const BANNER_SLIDES = [
-  "/images/front/slider-1.jpg",
-  "/images/front/slider-2.jpg",
-  "/images/front/slider-3.jpg",
+  "/front/img/slider-1.jpg",
+  "/front/img/slider-2.jpg",
+  "/front/img/slider-3.jpg",
 ];
 
 const ITEMS_PER_PAGE = 8;
@@ -64,7 +64,10 @@ export default function ProductCategoryPage() {
       {}
     ).then((data) => {
       setCategories(data);
-    }).catch(console.error);
+    }).catch((err) => {
+      console.error(err);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -233,7 +236,7 @@ export default function ProductCategoryPage() {
                           <div className="relative aspect-square overflow-hidden bg-zinc-100">
                             {product.item_thumbnail && (
                               <Image
-                                src={product.item_thumbnail}
+                                src={resolveAssetUrl(product.item_thumbnail)}
                                 alt={product.item_sku}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -338,7 +341,7 @@ export default function ProductCategoryPage() {
                     >
                       <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-zinc-100">
                         <Image
-                          src={prod.item_thumbnail}
+                          src={resolveAssetUrl(prod.item_thumbnail)}
                           alt={prod.item_sku}
                           fill
                           className="object-cover"

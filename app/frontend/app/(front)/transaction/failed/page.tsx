@@ -8,7 +8,7 @@ export default function TransactionFailedPage() {
       <div className="container mx-auto px-4 text-center max-w-md">
         <div className="w-24 h-24 relative mx-auto mb-6">
           <Image
-            src="/images/front/failed.png"
+            src="/front/img/failed.png"
             alt="Failed"
             fill
             className="object-contain rounded-full"

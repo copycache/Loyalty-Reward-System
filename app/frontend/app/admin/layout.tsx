@@ -123,15 +123,16 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, user, loadUser, logout, _hydrated } = useAuthStore();
+  const { user, loadUser, logout, _hydrated } = useAuthStore();
 
   const [initialized, setInitialized] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!_hydrated) return;
-    if (!token) {
-      router.replace("/member/login");
+    const isLoggedIn = localStorage.getItem("is_logged_in") === "true";
+    if (!isLoggedIn) {
+      router.replace("/auth/login");
       return;
     }
 
@@ -144,21 +145,21 @@ export default function AdminLayout({
           return;
         }
       } catch {
-        // token may be invalid
+        // session may be invalid
       }
       setInitialized(true);
     };
 
     init();
-  }, [token, _hydrated]);
+  }, [_hydrated]);
 
   const handleLogout = () => {
     logout();
     toast.success("You have been logged out.");
-    router.push("/member/login");
+    router.push("/auth/login");
   };
 
-  if (!_hydrated || !token || !initialized) {
+  if (!_hydrated || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -182,7 +183,7 @@ export default function AdminLayout({
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   {/* Logo placeholder */}
                   <img
-                    src="/images/logo/logo.png"
+                    src="/member_img/client-resources/logo/logo.png"
                     alt="Logo"
                     className="h-8"
                     onError={(e) => {
@@ -191,7 +192,7 @@ export default function AdminLayout({
                   />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">MLM System</span>
+                  <span className="truncate font-semibold">Iqon Elite</span>
                   <span className="truncate text-xs">Administrator</span>
                 </div>
               </SidebarMenuButton>
@@ -220,7 +221,6 @@ export default function AdminLayout({
                         <Collapsible
                           open={isOpen}
                           onOpenChange={(open) => {
-                            // ✅ Don't allow closing if a child is active
                             if (hasActiveChild) return;
                             setOpenMenus((prev) => ({
                               ...prev,
@@ -275,26 +275,22 @@ export default function AdminLayout({
         </SidebarContent>
 
         {/* Footer */}
-        <SidebarFooter>
+        {/* <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {/* Logo placeholder */}
-                </div>
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">John Doe</span>
-                  <span className="truncate text-xs">email@gmail.com</span>
+                  <span className="truncate font-semibold">Administrator</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        </SidebarFooter>
+        </SidebarFooter> */}
       </Sidebar>
 
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          {/* Left: trigger + page title */}
           <div className="flex items-center gap-2">
             <SidebarTrigger />
             {/* <Separator orientation="vertical" className="h-5" />
@@ -303,12 +299,9 @@ export default function AdminLayout({
             </span> */}
           </div>
 
-          {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Right: actions */}
           <div className="flex items-center gap-1">
-            {/* Theme toggle */}
             {/* <ModeToggle /> */}
 
             <Separator orientation="vertical" className="h-5 mx-1" />

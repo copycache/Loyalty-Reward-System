@@ -65,7 +65,7 @@ export default function MemberDashboardPage() {
     if (!token) return;
     const fetchData = async () => {
       try {
-        const [walletRes, binaryRes, slotsRes, annRes, currencyRes, unplacedRes, planStatusRes, planLabelRes, userInfoRes, binaryLogRes] = await Promise.all([
+        const results = await Promise.allSettled([
           apiPost("/api/get_total", {}, token),
           apiPost("/api/member/get_earning", { plan: "BINARY" }, token),
           apiPost("/api/all_slot", {}, token),
@@ -78,37 +78,45 @@ export default function MemberDashboardPage() {
           apiPost("/api/member/get_binary_log", { slot_id: currentSlot?.slot_id }, token),
         ]);
 
-        if (walletRes?.data) setWallets(walletRes.data);
-        if (binaryRes?.data) setBinaryOverview(binaryRes.data);
-        if (slotsRes?.data) setSlots(slotsRes.data);
-        if (annRes?.data) setAnnouncements(annRes.data);
-        if (Array.isArray(currencyRes)) setCurrencyList(currencyRes);
-        else if (currencyRes?.data) setCurrencyList(currencyRes.data);
-        if (unplacedRes && Array.isArray(unplacedRes) && unplacedRes.length > 0) setUnplacedSlots(unplacedRes);
-        if (planStatusRes?.data) setPlanStatus(planStatusRes.data);
+        const [
+          walletRes, binaryRes, slotsRes, annRes, currencyRes,
+          unplacedRes, planStatusRes, planLabelRes, userInfoRes, binaryLogRes
+        ] = results.map(r => r.status === "fulfilled" ? r.value : null);
+
+        if ((walletRes as any)?.data) setWallets((walletRes as any).data);
+        if ((binaryRes as any)?.data) setBinaryOverview((binaryRes as any).data);
+        if ((slotsRes as any)?.data) setSlots((slotsRes as any).data);
+        if ((annRes as any)?.data) setAnnouncements((annRes as any).data);
+        if (Array.isArray(currencyRes)) setCurrencyList(currencyRes as any[]);
+        else if ((currencyRes as any)?.data) setCurrencyList((currencyRes as any).data);
+        if (unplacedRes && Array.isArray(unplacedRes as any) && (unplacedRes as any[]).length > 0) setUnplacedSlots(unplacedRes as any[]);
+        if ((planStatusRes as any)?.data) setPlanStatus((planStatusRes as any).data);
         else if (planStatusRes) setPlanStatus(planStatusRes);
-        if (planLabelRes?.data) setPlanLabel(planLabelRes.data);
+        if ((planLabelRes as any)?.data) setPlanLabel((planLabelRes as any).data);
         else if (planLabelRes) setPlanLabel(planLabelRes);
-        if (userInfoRes?.data) setUserInfo(userInfoRes.data);
+        if ((userInfoRes as any)?.data) setUserInfo((userInfoRes as any).data);
         else if (userInfoRes) setUserInfo(userInfoRes);
-        if (binaryLogRes?.data) {
-          setBinaryLog(binaryLogRes.data);
-          const bl = binaryLogRes.data;
+        if ((binaryLogRes as any)?.data) {
+          const bl = (binaryLogRes as any).data;
+          setBinaryLog(bl);
           setTodaysPairs(parseFloat(bl.todays_pairs) || 0);
           setMaxPairs(parseFloat(bl.max_pairs) || 1);
           if (bl.binary_settings) setBinarySettings(bl.binary_settings);
         } else if (binaryLogRes) {
-          setBinaryLog(binaryLogRes);
-          setTodaysPairs(parseFloat(binaryLogRes.todays_pairs) || 0);
-          setMaxPairs(parseFloat(binaryLogRes.max_pairs) || 1);
-          if (binaryLogRes.binary_settings) setBinarySettings(binaryLogRes.binary_settings);
+          const bl = binaryLogRes as any;
+          setBinaryLog(bl);
+          setTodaysPairs(parseFloat(bl.todays_pairs) || 0);
+          setMaxPairs(parseFloat(bl.max_pairs) || 1);
+          if (bl.binary_settings) setBinarySettings(bl.binary_settings);
         }
       } catch (e) {
         console.error("Dashboard fetch error", e);
       }
       setLoading(false);
     };
-    fetchData();
+    // Overall timeout: force loading off after 35s even if all requests hang
+    const forceTimeout = setTimeout(() => setLoading(false), 35000);
+    fetchData().finally(() => clearTimeout(forceTimeout));
 
     if (typeof window !== "undefined" && localStorage.getItem("member_upgrade")) setShowUpgradeNotif(true);
     if (currentSlot?.welcome_bonus_notif) setShowWelcomeBonus(true);

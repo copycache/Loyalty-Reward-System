@@ -11,45 +11,30 @@ const ACTIVITY_EVENTS = ["click", "mousemove", "keydown", "scroll", "touchstart"
 const LAST_ACTIVITY_KEY = "lastActivity";
 const FORCE_LOGOUT_KEY = "force-logout";
 
-/**
- * Watches for user activity (clicks, scrolling, typing, etc.) and
- * automatically logs the user out after IDLE_TIMEOUT of no activity.
- *
- * Also syncs across browser tabs: if the user is logged out in one tab,
- * all other open tabs log out too (via the "storage" event).
- */
+// Auto-logout when user is inactive for 10 minutes
 export function useIdleTimeout() {
   const router = useRouter();
   const { token, logout } = useAuthStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clears local state, shows a toast, and redirects to login.
-  // This does NOT call the API — just handles the client-side cleanup.
   const finishLogout = useCallback(() => {
     logout();
     toast.info("You have been logged out due to inactivity.");
-    router.push("/member/login");
+    router.push("/auth/login");
   }, [logout, router]);
 
-  // Called when the idle timer runs out. Tells the server we're logging
-  // out, then cleans up locally regardless of whether that call succeeds.
   const logoutDueToInactivity = useCallback(async () => {
     if (!token) return;
-
     try {
       await apiPost("/api/logout", {}, token);
     } catch {
-      // Even if the server call fails, we still want to log out locally.
+      // still log out locally even if server call fails
     }
-
     finishLogout();
   }, [token, finishLogout]);
 
-  // Called on every user activity. Records "I was active just now" and
-  // restarts the countdown to auto-logout.
   const resetIdleTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
-
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     timerRef.current = setTimeout(logoutDueToInactivity, IDLE_TIMEOUT);
   }, [logoutDueToInactivity]);
@@ -57,31 +42,22 @@ export function useIdleTimeout() {
   useEffect(() => {
     if (!token) return;
 
-    // Edge case: if the user refreshes the page (or reopens the tab)
-    // after already being idle for too long, log them out immediately
-    // instead of waiting for a new timer to elapse.
+    // If the page loads and the user is already idle, log out immediately
     const lastActivity = parseInt(
       localStorage.getItem(LAST_ACTIVITY_KEY) || "0",
       10
     );
-    const alreadyIdleTooLong =
-      lastActivity && Date.now() - lastActivity >= IDLE_TIMEOUT;
-
-    if (alreadyIdleTooLong) {
+    if (lastActivity && Date.now() - lastActivity >= IDLE_TIMEOUT) {
       logoutDueToInactivity();
       return;
     }
 
-    // Start tracking activity from now
     resetIdleTimer();
 
-    // Listen for any sign of activity and reset the timer each time
     ACTIVITY_EVENTS.forEach((event) => {
       window.addEventListener(event, resetIdleTimer);
     });
 
-    // Listen for a "force-logout" signal from another tab. If this user
-    // gets logged out in one tab, every other open tab should follow.
     const handleCrossTabLogout = (event: StorageEvent) => {
       if (event.key === FORCE_LOGOUT_KEY) {
         finishLogout();
@@ -91,7 +67,6 @@ export function useIdleTimeout() {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-
       ACTIVITY_EVENTS.forEach((event) => {
         window.removeEventListener(event, resetIdleTimer);
       });

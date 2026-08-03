@@ -314,7 +314,7 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
       <SidebarHeader className="p-4">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <img
-            src="/images/logo/logo.png"
+            src="/member_img/client-resources/logo/logo.png"
             alt="Logo"
             className="h-8"
             onError={(e) => {

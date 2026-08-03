@@ -12,8 +12,6 @@ class VerifyCsrfToken extends Middleware
      * @var array
      */
     protected $except = [
-    	'/open_import_slots',
-        '/payment/dragonpay/postback',
-    	'/payment/dragonpay/return',
+        '*',
     ];
 }

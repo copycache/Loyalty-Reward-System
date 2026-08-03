@@ -26,7 +26,7 @@ export default function WizardLayout({
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <img
-              src="/images/logo/logo.png"
+              src="/member_img/client-resources/logo/logo.png"
               alt="Logo"
               className="h-14 mx-auto"
               onError={(e) => {

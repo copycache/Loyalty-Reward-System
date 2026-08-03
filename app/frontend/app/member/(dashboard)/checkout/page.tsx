@@ -152,10 +152,10 @@ export default function MemberCheckoutPage() {
               {cart.map((item: any) => (
                 <div key={item.id} className="flex gap-4 items-center">
                   <img
-                    src={item.item_thumbnail ? `${apiUrl}/storage/${item.item_thumbnail}` : "/images/placeholder.png"}
+                    src={item.item_thumbnail ? `${apiUrl}/storage/${item.item_thumbnail}` : "/admin/img/noimage.png"}
                     alt={item.item_description || "Product"}
                     className="w-16 h-16 rounded object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.png"; }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/admin/img/noimage.png"; }}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{item.item_description || "Product"}</p>

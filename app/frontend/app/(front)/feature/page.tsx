@@ -88,7 +88,7 @@ const addonFeatures = [
 export default function FeaturePage() {
   return (
     <div>
-      <section className="py-16 bg-linear-to-b from-green-50 to-white">
+      <section className="py-16 bg-linear-to-b from-zinc-50 to-white">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-5xl font-bold">MLM System Features</h1>
         </div>

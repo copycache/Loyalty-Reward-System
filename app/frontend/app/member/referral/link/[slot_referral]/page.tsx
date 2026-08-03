@@ -13,7 +13,7 @@ export default function ReferralLinkRedirectPage() {
     if (slotReferral) {
       localStorage.setItem("slot_referral", slotReferral);
     }
-    router.replace("/member/register");
+    router.replace("/auth/register");
   }, [slotReferral, router]);
 
   return (

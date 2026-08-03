@@ -35,7 +35,7 @@ export default function CreatePasswordPage() {
         password_confirmation: passwordConfirmation,
       });
       toast.success("Password set successfully! You can now login.");
-      router.push("/member/login");
+      router.push("/auth/login");
     } catch (err: any) {
       toast.error(err?.message || "Failed to set password.");
     } finally {

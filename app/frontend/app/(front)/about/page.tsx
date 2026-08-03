@@ -1,140 +1,166 @@
-import Image from "next/image";
-
 export default function AboutPage() {
   return (
-    <div>
-      {/* Title */}
-      <section className="py-16 bg-linear-to-b from-green-50 to-white">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold">
-            <span>ABOUT US</span>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <section
+        style={{
+          padding: "80px 20px",
+          textAlign: "center",
+          background: "#fff",
+        }}
+      >
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <h1
+            style={{
+              fontSize: "3rem",
+              fontWeight: 800,
+              marginBottom: "1.5rem",
+            }}
+          >
+            About iQON ELITE Corporation
           </h1>
+          <p style={{ fontSize: "1.2rem", lineHeight: 1.8, color: "#555" }}>
+            iQON ELITE Corporation is a dynamic and innovative company dedicated
+            to providing premium wellness products that enhance the quality of
+            life. Our flagship product, iQONCELL Stemcell Coffee, combines rich
+            flavor with health benefits, setting a new standard in the coffee
+            industry.
+          </p>
         </div>
       </section>
 
-      {/* Vision & Mission */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Vision */}
-            <div className="bg-zinc-900 text-white rounded-xl p-8">
-              <h2 className="text-2xl font-bold mb-4">VISION</h2>
-              <p className="text-white/80 leading-relaxed">
-                We envision a world where indigenous wisdom meets modern wellness — where every
-                home enjoys healthier lives, every farmer works with dignity, and every community
-                flourishes in harmony with nature. At the heart of this vision is our promise: to
-                create world-class products that stand the test of time — crafted with care,
-                trusted by generations, and rooted in authenticity.
-              </p>
-            </div>
-            {/* Mission */}
-            <div className="bg-zinc-900 text-white rounded-xl p-8">
-              <h2 className="text-2xl font-bold mb-4">MISSION</h2>
-              <p className="text-white/80 leading-relaxed">
-                Our mission is simple yet powerful: to uplift indigenous farmers by creating
-                sustainable livelihoods, while delivering natural solutions that restore
-                confidence, beauty, and wellness to every customer we touch. When farmers thrive,
-                communities grow. When customers heal, lives transform. This is the cycle of
-                Domus Naturae.
-              </p>
-            </div>
+      <section
+        style={{
+          padding: "60px 20px",
+          background: "#000",
+          color: "#fff",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1000,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "2rem",
+          }}
+        >
+          <div style={{ padding: "2rem" }}>
+            <h2
+              style={{
+                fontSize: "1.8rem",
+                fontWeight: 700,
+                color: "#FFDE59",
+                marginBottom: "1rem",
+              }}
+            >
+              Our Mission
+            </h2>
+            <p style={{ lineHeight: 1.8, color: "#ccc" }}>
+              To make the world a better place to live in by positively
+              impacting the lives of 10 million people across the globe by the
+              year 2030 through innovative wellness solutions and sustainable
+              business opportunities.
+            </p>
+          </div>
+
+          <div style={{ padding: "2rem" }}>
+            <h2
+              style={{
+                fontSize: "1.8rem",
+                fontWeight: 700,
+                color: "#FFDE59",
+                marginBottom: "1rem",
+              }}
+            >
+              Our Vision
+            </h2>
+            <p style={{ lineHeight: 1.8, color: "#ccc" }}>
+              To help decrease poverty around the world by creating a &ldquo;system
+              for success&rdquo; using the latest cutting-edge technology that will
+              support and nurture any individual in their journey to become
+              successful in business and in all areas of life.
+            </p>
+          </div>
+
+          <div style={{ padding: "2rem" }}>
+            <h2
+              style={{
+                fontSize: "1.8rem",
+                fontWeight: 700,
+                color: "#FFDE59",
+                marginBottom: "1rem",
+              }}
+            >
+              Core Values
+            </h2>
+            <p style={{ lineHeight: 1.8, color: "#ccc" }}>
+              Integrity, Innovation, Excellence, and Community. We believe in
+              building lasting relationships based on trust, delivering
+              exceptional quality, and fostering a culture of growth and
+              collaboration.
+            </p>
           </div>
         </div>
       </section>
 
-      <hr className="container mx-auto max-w-5xl" />
-
-      {/* Our Story */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-            <span>Our Story</span>
+      <section style={{ padding: "80px 20px", background: "#fff" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+          <h2
+            style={{
+              fontSize: "2rem",
+              fontWeight: 700,
+              marginBottom: "2rem",
+            }}
+          >
+            Why Choose iQON ELITE?
           </h2>
-          <div className="grid md:grid-cols-3 gap-8 items-start">
-            <div className="md:col-span-2 space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                Domus Naturae began with a conviction: nature has the power to heal people — and
-                uplift communities.
-              </p>
-              <p>
-                In 2014, we planted our first seeds in the highlands of Abra. By 2018, after
-                years of nurturing rosemary, lemongrass, pine, and other botanicals, we unlocked
-                the incredible potential of our own farm-to-bottle extracts. What started as
-                farming soon grew into a purpose — to bring natural healing from the soil
-                straight into your hands.
-              </p>
-              <p>
-                Today, more than 200,000 people trust Domus Naturae, with over 17,000 heartfelt
-                testimonials pouring in — stories of regrowth, renewal, and transformation that
-                inspire us every single day.
-              </p>
-              <p>
-                But beyond oils and extracts, every bottle carries a deeper story: the hands of
-                our farmers, the hopes of their families, and the belief that natural wellness
-                should be within reach for all. This isn&apos;t just a business — it&apos;s a
-                mission, a movement, and a cycle of care that sustains both people and planet.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden mb-4">
-                <Image
-                  src="/images/logo/founder.png"
-                  alt="Founder"
-                  fill
-                  className="object-cover"
-                />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "2rem",
+              textAlign: "left",
+            }}
+          >
+            {[
+              {
+                title: "Premium Quality",
+                desc: "Our products are made with the highest quality ingredients, ensuring safety and efficacy.",
+              },
+              {
+                title: "Innovative Products",
+                desc: "We continuously research and develop cutting-edge wellness solutions.",
+              },
+              {
+                title: "Sustainable Growth",
+                desc: "We provide a proven system for financial freedom and personal development.",
+              },
+              {
+                title: "Community Focused",
+                desc: "Join a thriving community of like-minded individuals working together for success.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "1.5rem",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 0,
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.3rem",
+                    fontWeight: 600,
+                    marginBottom: "0.75rem",
+                    color: "var(--primary-color)",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p style={{ lineHeight: 1.7, color: "#555" }}>{item.desc}</p>
               </div>
-              <p className="font-semibold">
-                Charles B. Herrero
-                <br />
-                <span className="text-sm text-muted-foreground font-normal">
-                  Founder of Domus Naturae
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <hr className="container mx-auto max-w-5xl" />
-
-      {/* Our Community */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-            <span>Our Community</span>
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="relative aspect-video rounded-xl overflow-hidden">
-              <Image
-                src="/images/logo/mtbaruyen.jpg"
-                alt="Community"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                Domus Naturae is more than a brand — it&apos;s a growing circle of
-                transformation.
-              </p>
-              <p>
-                For farmers: it&apos;s fair livelihood, dignity in work, and pride in preserving
-                indigenous traditions.
-              </p>
-              <p>
-                For customers: it&apos;s real results, renewed confidence, and healing that goes
-                beyond the surface.
-              </p>
-              <p>
-                Together, we are rewriting what it means to live naturally. Every purchase
-                sustains a farmer. Every routine supports healing. Every story inspires change.
-              </p>
-              <p>
-                When you choose Domus Naturae, you don&apos;t just use a product — you become
-                part of a movement to live better, live naturally, and uplift lives.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>

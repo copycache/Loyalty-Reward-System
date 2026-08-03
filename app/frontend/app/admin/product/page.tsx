@@ -532,7 +532,7 @@ export default function AdminProductsPage() {
                     <div className="border rounded-md overflow-hidden">
                       <Table>
                         <TableHeader>
-                          <TableRow><TableHead className="text-center">Item Name</TableHead><TableHead className="text-center">Item Quantity</TableHead><TableHead width={50}></TableHead></TableRow>
+                          <TableRow><TableHead className="text-center">Item Name</TableHead><TableHead className="text-center">Item Quantity</TableHead><TableHead className="text-center w-[50px]"></TableHead></TableRow>
                         </TableHeader>
                         <TableBody>
                           {item.item_kit?.map((k: any, i: number) => (
@@ -587,7 +587,7 @@ export default function AdminProductsPage() {
                 </div>
                 <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button variant="outline" onClick={() => setDetailOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSubmit} disabled={submitted}>{submitted ? "Saving..." : action === "add" ? "Create Discount" : "Update Discount"}</Button>
+                  <Button onClick={handleSubmit} disabled={submitted}>{submitted ? "Saving..." : "Update Discount"}</Button>
                 </div>
               </TabsContent>
             )}
@@ -662,7 +662,7 @@ export default function AdminProductsPage() {
                             <TableHead className="text-center">Sold to</TableHead>
                             <TableHead className="text-center">Transfer to</TableHead>
                             <TableHead className="text-center">Used by</TableHead>
-                            <TableHead width={50}></TableHead>
+<TableHead className="text-center w-[50px]"></TableHead>
                           </TableRow>
                         </TableHeader>
                         {codeLoading ? (

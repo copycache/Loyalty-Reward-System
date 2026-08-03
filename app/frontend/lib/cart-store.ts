@@ -4,8 +4,7 @@ import { create } from "zustand";
 import Cookies from "js-cookie";
 import { apiPost } from "@/lib/api";
 
-// --- Types ---
-
+// Types
 interface CartItem {
   item_id: number;
   item_sku: string;
@@ -42,9 +41,8 @@ interface CartState {
   clearCart: () => void;
 }
 
-// --- Cookie helpers ---
-// The cart is stored as a flat array of item IDs, where duplicates mean
-// higher quantity. e.g. [5, 5, 7] = 2x item 5, 1x item 7.
+// The cart is stored as a simple list of item IDs in a cookie.
+// Example: [5, 5, 7] means 2 of item 5 and 1 of item 7.
 
 const COOKIE_NAME = "items";
 const COOKIE_EXPIRY_DAYS = 30;
@@ -65,8 +63,7 @@ function saveItemsToCookie(items: number[]) {
   });
 }
 
-// Counts how many times each item ID appears in the flat array,
-// e.g. [5, 5, 7] -> { 5: 2, 7: 1 }
+// Count how many of each item we have
 function countItems(items: number[]): Record<number, number> {
   const counts: Record<number, number> = {};
   items.forEach((id) => {
@@ -74,8 +71,6 @@ function countItems(items: number[]): Record<number, number> {
   });
   return counts;
 }
-
-// --- The store ---
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
@@ -101,23 +96,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   changeQty: (itemId, qty) => {
-    // Quantity can't go below 1 — if the user wants 0, they should
-    // use removeFromCart instead.
     const safeQty = Math.max(1, qty);
-
-    // Rebuild the flat items array: remove all copies of this item,
-    // then add back exactly `safeQty` copies.
     const otherItems = get().items.filter((id) => id !== itemId);
     const items = [...otherItems, ...Array(safeQty).fill(itemId)];
 
     saveItemsToCookie(items);
     set({ items, cartCount: items.length });
 
-    // Update this item's quantity and subtotal locally, without
-    // waiting for a server round-trip (syncCartItems isn't called here).
     const cartItems = get().cartItems.map((cartItem) => {
       if (cartItem.item_id !== itemId) return cartItem;
-
       const price = cartItem.discounted_price || cartItem.item_price;
       return { ...cartItem, item_qty: safeQty, subtotal: price * safeQty };
     });
@@ -139,13 +126,11 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  // Fetches full item details (price, thumbnail, etc.) from the server
-  // for the item IDs we have stored, then merges in the quantities.
+  // Get full item details from the server
   syncCartItems: async () => {
     const { items } = get();
     const uniqueItemIds = [...new Set(items)];
 
-    // Nothing in the cart — reset everything and skip the API call.
     if (uniqueItemIds.length === 0) {
       set({ cartItems: [], total: 0, totalGc: 0, cartCount: 0 });
       return;
@@ -179,11 +164,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  // Recalculates the total price across all cart items, in both
-  // regular currency (total) and GC points (totalGc).
+  // Calculate totals
   getTotal: () => {
     const { cartItems } = get();
-
     let total = 0;
     let totalGc = 0;
 

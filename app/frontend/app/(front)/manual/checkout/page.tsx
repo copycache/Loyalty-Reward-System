@@ -102,7 +102,7 @@ export default function ManualCheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-zinc-50 to-white">
       <section className="py-16">
         <div className="container mx-auto px-4" style={{ marginTop: "80px" }}>
           <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">

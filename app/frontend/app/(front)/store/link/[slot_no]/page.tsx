@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { apiPost } from "@/lib/api";
+import { apiPost, resolveAssetUrl } from "@/lib/api";
 import { useCartStore } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -104,7 +104,7 @@ export default function StoreLinkPage() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <Image
-          src="/images/bad_request/404.png"
+          src="/bad_request/404.png"
           alt="Store not found"
           width={400}
           height={300}
@@ -127,18 +127,18 @@ export default function StoreLinkPage() {
   }
 
   const storeLink = slotNoCrypt
-    ? `${window.location.origin}/member/register/referral/${slotNoCrypt}`
+    ? `${window.location.origin}/auth/register/referral/${slotNoCrypt}`
     : "#";
 
   return (
     <div>
       {/* Promo Banner */}
-      <section className="bg-linear-to-b from-green-50 to-white">
+      <section className="bg-linear-to-b from-zinc-50 to-white">
         <div className="container mx-auto px-4 py-12">
           <div className="grid md:grid-cols-2 gap-8 items-center max-w-5xl mx-auto">
             <div className="relative aspect-video rounded-xl overflow-hidden">
               <Image
-                src="/images/Landing-Page/client-resources/sl-003.png"
+                src="/Landing-Page/client-resources/sl-003.png"
                 alt="Store Banner"
                 width={600}
                 height={400}
@@ -207,7 +207,7 @@ export default function StoreLinkPage() {
                       <div className="relative aspect-square overflow-hidden bg-zinc-100">
                         {product.item_thumbnail && (
                           <Image
-                            src={product.item_thumbnail}
+                            src={resolveAssetUrl(product.item_thumbnail)}
                             alt={product.item_sku}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform"

@@ -3,14 +3,12 @@
 import { create } from "zustand";
 import { apiPost, apiGet, ApiError, API_BASE_URL } from "@/lib/api";
 
-// --- Types ---
-// These describe the shape of data we get back from the API.
-
+// Types for our data
 interface User {
   id: number;
   name: string;
   email: string;
-  type: string; // "admin" | "cashier" | "member" (used to control app behavior)
+  type: string;
   status?: string;
   first_name?: string;
   last_name?: string;
@@ -22,7 +20,7 @@ interface User {
   photo_url?: string;
   created_at: string;
   updated_at: string;
-  [key: string]: unknown; // allows extra fields we haven't explicitly listed
+  [key: string]: unknown;
 }
 
 interface Wallet {
@@ -76,10 +74,7 @@ interface CurrentSlot {
   [key: string]: unknown;
 }
 
-// --- The store's shape: what data it holds + what actions it offers ---
-
 interface AuthState {
-  // Data
   token: string | null;
   user: User | null;
   userType: string | null;
@@ -91,8 +86,7 @@ interface AuthState {
   isAuthenticated: boolean;
   _hydrated: boolean;
 
-  // Actions
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   setToken: (token: string) => void;
   setHydrated: () => void;
@@ -105,14 +99,10 @@ interface AuthState {
   clear: () => void;
 }
 
-// --- localStorage helpers ---
-// Keeping all localStorage access in one place makes it much easier to
-// change later (e.g. if we switch to cookies for security reasons).
+const LOCAL_STORAGE_KEYS = ["auth", "type", "member", "slot_id", "is_logged_in"];
 
-const LOCAL_STORAGE_KEYS = ["auth", "type", "member", "slot_id"];
-
-function saveSession(token: string, userType: string) {
-  localStorage.setItem("auth", token);
+function saveSession(userType: string) {
+  localStorage.setItem("is_logged_in", "true");
   localStorage.setItem("type", userType);
 }
 
@@ -120,8 +110,6 @@ function clearSession() {
   LOCAL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 }
 
-// The "reset to logged-out" version of every piece of state.
-// Used by both logout() and clear() so they can't drift out of sync.
 const LOGGED_OUT_STATE = {
   token: null,
   user: null,
@@ -133,49 +121,7 @@ const LOGGED_OUT_STATE = {
   isAuthenticated: false,
 };
 
-// --- Login helper ---
-// Exchanges an email/password for an access token via Laravel Passport's
-// OAuth endpoint. Pulled out of login() because it's a distinct, chunky
-// step (its own fetch call, its own error handling).
-async function requestAccessToken(
-  email: string,
-  password: string,
-  clientSecret: string
-): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/oauth/token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      grant_type: "password",
-      client_id: Number(process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID) || 2,
-      client_secret: clientSecret,
-      username: email,
-      password,
-      scope: "",
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.hint || err.message || "Invalid credentials");
-  }
-
-  const { access_token: accessToken } = await response.json();
-  if (!accessToken) {
-    throw new Error("No access token received");
-  }
-
-  return accessToken;
-}
-
-// --- The store ---
-
 export const useAuthStore = create<AuthState>((set, get) => ({
-  // Start everything empty — real values get filled in after hydration
-  // on the client, so the server and client render the same thing at first.
   token: null,
   user: null,
   userType: null,
@@ -187,44 +133,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   _hydrated: false,
 
-  // --- Auth actions ---
-
+  // Login - sends email/password to the API
   login: async (email, password) => {
     set({ isLoading: true });
 
     try {
-      // 1. Get the OAuth client secret, and check the site isn't down for maintenance
-      const secretData = await apiGet<{
-        oauth: { secret: string };
-        maintenance: { mlm_feature_enable: number };
-      }>("/api/client_secret");
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (secretData.maintenance.mlm_feature_enable === 1) {
-        throw new Error("Website Under Maintenance.");
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || err.hint || "Invalid credentials");
       }
 
-      // 2. Trade the email/password for an access token
-      const accessToken = await requestAccessToken(
-        email,
-        password,
-        secretData.oauth.secret
-      );
+      const body = await response.json();
+      const user: User = body.user || body;
+      const apiToken = body.token || "";
 
-      // 3. Use that token to fetch who just logged in
-      const user = await apiGet<User>("/api/user_data", accessToken);
+      if (apiToken) {
+        localStorage.setItem("auth", apiToken);
+      }
 
-      saveSession(accessToken, user.type);
+      saveSession(user.type);
       set({
-        token: accessToken,
         user,
         userType: user.type,
+        token: apiToken || "session_auth",
         isAuthenticated: true,
         isLoading: false,
       });
 
-      // 4. Regular members also get their slot + plan info loaded right away.
-      // Admins/cashiers don't have a "slot", so skip it for them.
-      // If any of this fails, we still consider the login itself successful.
+      // For regular members, load additional data
       const isRegularMember = user.type !== "admin" && user.type !== "cashier";
       if (isRegularMember) {
         try {
@@ -232,27 +178,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await get().loadPlanSettings();
           await get().loadPlanLabel();
         } catch {
-          // Non-critical — ignore
+          // non-critical
         }
       }
+
+      return user;
     } catch (error) {
       set({ isLoading: false });
-      throw error; // let the login form show the error message
+      throw error;
     }
   },
 
+  // Logout - calls API then clears local state
   logout: async () => {
-    const { token } = get();
     set({ isLoading: true });
 
-    // Tell the server to invalidate the token. If this fails (e.g. no
-    // internet), we still want to log the user out locally.
-    if (token) {
-      try {
-        await apiPost("/api/logout", {}, token);
-      } catch {
-        // ignore
-      }
+    try {
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+    } catch {
+      // ignore
     }
 
     clearSession();
@@ -266,17 +214,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setHydrated: () => set({ _hydrated: true }),
 
-  // --- Data loading actions ---
-  // Fetch the current user's profile. If their token has expired
-  // (401 Unauthorized), log them out. Any other error (e.g. a network
-  // hiccup) just gets logged, since it isn't necessarily their fault.
+  // Get current user data (restores session on page refresh)
   loadUser: async () => {
-    const { token } = get();
-    if (!token) return;
-
     try {
-      const user = await apiGet<User>("/api/user_data", token);
-      set({ user, userType: user.type });
+      const user = await apiGet<User>("/api/user_data");
+      const storedToken = localStorage.getItem("auth") || "session_auth";
+      set({ user, userType: user.type, token: storedToken, isAuthenticated: true });
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         get().clear();
@@ -286,19 +229,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  // Get current slot info
   loadCurrentSlot: async (slotId) => {
-    const { token } = get();
-    if (!token) return;
-
-    // Use the slot ID passed in, or fall back to whatever was last used
     const targetSlotId = slotId || localStorage.getItem("slot_id");
 
     try {
-      const slot = await apiPost<CurrentSlot>(
-        "/api/current_slot",
-        { slot_id: targetSlotId },
-        token
-      );
+      const slot = await apiPost<CurrentSlot>("/api/current_slot", {
+        slot_id: targetSlotId,
+      });
       if (slot) {
         localStorage.setItem("slot_id", String(slot.slot_id));
         set({ currentSlot: slot, moduleSettings: slot.module_settings });
@@ -308,15 +246,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  // Get plan settings (e.g., commission rates)
   loadPlanSettings: async () => {
-    const { token } = get();
-    if (!token) return;
-
     try {
       const planSettings = await apiPost<Record<string, number>>(
         "/api/member/get_plan_settings",
-        {},
-        token
+        {}
       );
       set({ planSettings });
     } catch (error) {
@@ -324,15 +259,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  // Get plan labels
   loadPlanLabel: async () => {
-    const { token } = get();
-    if (!token) return;
-
     try {
       const planLabel = await apiPost<Record<string, string>>(
         "/api/member/get_plan_label",
-        {},
-        token
+        {}
       );
       set({ planLabel });
     } catch (error) {
@@ -340,15 +272,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // --- Slot ID helpers (just wrap localStorage) ---
-
   setSlotId: (id) => localStorage.setItem("slot_id", id),
 
   getSlotId: () =>
     typeof window !== "undefined" ? localStorage.getItem("slot_id") : null,
 
-  // Same end result as logout(), but skips the API call — used when we
-  // already know the session is invalid (e.g. a 401 from loadUser).
+  // Clear everything (logout locally)
   clear: () => {
     clearSession();
     set(LOGGED_OUT_STATE);

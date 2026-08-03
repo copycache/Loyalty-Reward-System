@@ -12,6 +12,9 @@
 */
 
 
+Route::post('/login', 'Auth\LoginController@login');
+Route::post('/logout', 'Auth\LoginController@logout');
+
 /*USE THIS GROUP FOR TESTING ROUTES*/
 Route::get('/test_seed',						                                    "SeedController@seed");
 Route::get('/test_generate2',					                            "Admin\AdminUnilevelController@distribute_points");

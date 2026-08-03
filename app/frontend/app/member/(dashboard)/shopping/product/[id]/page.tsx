@@ -216,11 +216,11 @@ export default function MemberShoppingProductPage() {
                 <div className="w-full sm:w-48 flex-shrink-0">
                   <div className="aspect-square rounded-lg overflow-hidden bg-muted">
                     <img
-                      src={product.item_thumbnail || "/images/placeholder.png"}
+                      src={product.item_thumbnail || "/admin/img/noimage.png"}
                       alt={product.item_sku}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/images/placeholder.png";
+                        (e.target as HTMLImageElement).src = "/admin/img/noimage.png";
                       }}
                     />
                   </div>

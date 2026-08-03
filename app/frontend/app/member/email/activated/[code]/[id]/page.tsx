@@ -65,7 +65,7 @@ export default function EmailActivatedPage() {
           {status !== "loading" && (
             <Button
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => router.push("/member/login")}
+              onClick={() => router.push("/auth/login")}
             >
               Go to Login
             </Button>

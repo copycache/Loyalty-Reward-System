@@ -5,7 +5,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Privacy Policy</h1>
         <p className="text-sm text-muted-foreground mb-8">Last updated: July 4, 2025</p>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          Domus Naturae (&quot;Company&quot;, &quot;we&quot;, &quot;our&quot;, or
+          iQON ELITE Corporation (&quot;Company&quot;, &quot;we&quot;, &quot;our&quot;, or
           &quot;us&quot;) is committed to safeguarding your personal data in compliance with
           Republic Act No. 10173, also known as the Data Privacy Act of 2012. This Privacy
           Policy explains how we collect, use, store, share, and protect your information when

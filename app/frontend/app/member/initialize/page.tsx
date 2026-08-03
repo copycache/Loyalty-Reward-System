@@ -20,7 +20,7 @@ export default function MemberInitializePage() {
     if (!_hydrated) return;
 
     if (!token) {
-      router.replace("/member/login");
+      router.replace("/auth/login");
       return;
     }
 

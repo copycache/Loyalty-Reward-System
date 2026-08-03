@@ -57,14 +57,15 @@ export default function CashierLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, user, loadUser, logout, _hydrated } = useAuthStore();
+  const { user, loadUser, logout, _hydrated } = useAuthStore();
 
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (!_hydrated) return;
-    if (!token) {
-      router.replace("/member/login");
+    const isLoggedIn = localStorage.getItem("is_logged_in") === "true";
+    if (!isLoggedIn) {
+      router.replace("/auth/login");
       return;
     }
 
@@ -72,26 +73,26 @@ export default function CashierLayout({
       try {
         if (!user) await loadUser();
         const currentUser = useAuthStore.getState().user;
-        if (currentUser && currentUser.type !== "cashier") {
+        if (currentUser && currentUser.type !== "cashier" && currentUser.type !== "stockist") {
           router.replace("/member/dashboard");
           return;
         }
       } catch {
-        // token may be invalid
+        // session may be invalid
       }
       setInitialized(true);
     };
 
     init();
-  }, [token, _hydrated]);
+  }, [_hydrated]);
 
   const handleLogout = () => {
     logout();
     toast.success("You have been logged out.");
-    router.push("/member/login");
+    router.push("/auth/login");
   };
 
-  if (!_hydrated || !token || !initialized) {
+  if (!_hydrated || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -114,7 +115,7 @@ export default function CashierLayout({
               <SidebarMenuButton size="lg">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <img
-                    src="/images/logo/logo.png"
+                    src="/member_img/client-resources/logo/logo.png"
                     alt="Logo"
                     className="h-8"
                     onError={(e) => {

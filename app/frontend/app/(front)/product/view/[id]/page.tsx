@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { apiPost } from "@/lib/api";
+import { apiPost, resolveAssetUrl } from "@/lib/api";
 import { useCartStore } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -149,7 +149,7 @@ export default function ProductViewPage() {
         {/* Product Image */}
         <div className="relative aspect-square rounded-xl overflow-hidden bg-zinc-100">
           <Image
-            src={product.item_thumbnail}
+            src={resolveAssetUrl(product.item_thumbnail)}
             alt={product.item_sku}
             fill
             className="object-cover"
@@ -263,7 +263,7 @@ export default function ProductViewPage() {
               >
                 <div className="relative aspect-square rounded-xl overflow-hidden bg-zinc-100 mb-3">
                   <Image
-                    src={sp.item_thumbnail}
+                    src={resolveAssetUrl(sp.item_thumbnail)}
                     alt={sp.item_sku}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform"

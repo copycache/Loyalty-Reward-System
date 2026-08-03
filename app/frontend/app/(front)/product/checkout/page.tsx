@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/cart-store";
-import { apiPost } from "@/lib/api";
+import { apiPost, resolveAssetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -417,7 +417,7 @@ export default function FrontCheckoutPage() {
                           <div className="relative h-14 w-14 shrink-0 rounded overflow-hidden bg-white">
                             {item.item_thumbnail && (
                               <Image
-                                src={item.item_thumbnail}
+                                src={resolveAssetUrl(item.item_thumbnail)}
                                 alt={item.item_sku}
                                 fill
                                 className="object-cover"
@@ -475,7 +475,7 @@ export default function FrontCheckoutPage() {
                     <div className="relative w-12 h-12 rounded overflow-hidden bg-zinc-100 shrink-0">
                       {item.item_thumbnail && (
                         <Image
-                          src={item.item_thumbnail}
+                          src={resolveAssetUrl(item.item_thumbnail)}
                           alt={item.item_sku}
                           fill
                           className="object-cover"

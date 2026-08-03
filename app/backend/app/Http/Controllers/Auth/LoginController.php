@@ -3,78 +3,65 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 use App\Globals\Visitor;
+use App\Models\Tbl_slot;
+
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
-    use AuthenticatesUsers;
-
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
     protected $redirectTo = '/home';
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
     }
 
-    protected function validateLogin(Request $request)
+    public function username()
     {
-        $validate[$this->username()] = 'required';
-        $validate['password']        = 'required';
-
-        $this->validate($request, $validate);
+        return 'email';
     }
 
     public function login(Request $request)
     {
         Visitor::use_the_counter();
-        $this->validateLogin($request);
 
-        if ($this->attemptLogin($request)) 
+        $request->validate([
+            'email' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $username = $request->email;
+
+        $check_slot_code = Tbl_slot::owner()->where('slot_no', $username)->first();
+        if($check_slot_code)
         {
-            $user = $this->guard()->user();
-            $user->generateToken();
+            $username = $check_slot_code->email;
+        }
+
+        if (Auth::guard('web')->attempt(
+            ['email' => $username, 'password' => $request->password],
+            $request->boolean('remember')
+        )) {
+            $request->session()->regenerate();
+            $user = Auth::guard('web')->user();
             return response()->json($user->toArray());
         }
 
-        return $this->sendFailedLoginResponse($request);
+        throw ValidationException::withMessages([
+            'email' => [trans('auth.failed')],
+        ]);
     }
 
     public function logout(Request $request)
     {
-        $user = Auth::guard('api')->user();
+        Auth::guard('web')->logout();
 
-        if ($user) 
-        {
-            $user->api_token = null;
-            $user->save();
-        }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        $return['message'] = 'User logged out.';
-
-        return response()->json($return, 200);
+        return response()->json(['message' => 'User logged out.'], 200);
     }
 }

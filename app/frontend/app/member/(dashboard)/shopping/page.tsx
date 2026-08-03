@@ -236,11 +236,11 @@ export default function MemberShoppingPage() {
                 <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
                 <div className="aspect-square relative bg-muted group">
                     <img
-                    src={product.photo ? `${apiUrl}/storage/${product.photo}` : "/images/placeholder.png"}
+                    src={product.photo ? `${apiUrl}/storage/${product.photo}` : "/admin/img/noimage.png"}
                     alt={product.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/images/placeholder.png";
+                        (e.target as HTMLImageElement).src = "/admin/img/noimage.png";
                     }}
                     />
                     {product.is_new && (

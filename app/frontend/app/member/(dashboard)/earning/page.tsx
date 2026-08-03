@@ -41,13 +41,13 @@ const EARNING_ENDPOINTS: Record<string, string> = {
 };
 
 const PLAN_ICONS: Record<string, string> = {
-  DIRECT: "/icons/earnings-direct.png",
-  INDIRECT: "/icons/earnings-indirect.png",
-  BINARY: "/icons/earnings-matching-commission.png",
-  UNILEVEL: "/icons/earnings-product-unilevel.png",
-  MENTORS_BONUS: "/icons/earnings-mentors.png",
-  DROPSHIPPING_BONUS: "/images/earnings/DropshippingBonus.jpg",
-  WELCOME_BONUS: "/images/earnings/WelcomeBonus.png",
+  DIRECT: "/front/img/earnings-direct.png",
+  INDIRECT: "/front/img/earnings-indirect.png",
+  BINARY: "/front/img/earnings-matching-commission.png",
+  UNILEVEL: "/front/img/earnings-product-unilevel.png",
+  MENTORS_BONUS: "/front/img/earnings-mentors.png",
+  DROPSHIPPING_BONUS: "/member_img/earnings/DropshippingBonus.jpg",
+  WELCOME_BONUS: "/member_img/earnings/WelcomeBonus.png",
 };
 
 const ICONS: Record<string, any> = {

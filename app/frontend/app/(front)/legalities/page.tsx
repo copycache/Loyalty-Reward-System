@@ -19,7 +19,7 @@ export default function LegalitiesPage() {
 
   return (
     <div>
-      <section className="py-16 bg-linear-to-b from-green-50 to-white">
+      <section className="py-16 bg-linear-to-b from-zinc-50 to-white">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-5xl font-bold">LEGALITIES</h1>
         </div>
@@ -32,17 +32,17 @@ export default function LegalitiesPage() {
             <div>
               <h2 className="text-xl font-bold mb-4">SEC Certification</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Domus Naturae is officially registered with the Securities and Exchange
+                iQON ELITE Corporation is officially registered with the Securities and Exchange
                 Commission (SEC). This confirms our legitimacy and dedication to transparency,
                 ensuring trust for all our clients and partners.
               </p>
             </div>
             <div
               className="cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setModalImage("/images/certificates/SEC.jpg")}
+              onClick={() => setModalImage("/Landing-Page/client-resources/SEC.jpg")}
             >
               <Image
-                src="/images/certificates/SEC.jpg"
+                src="/Landing-Page/client-resources/SEC.jpg"
                 alt="SEC Certificate"
                 width={500}
                 height={700}
@@ -69,25 +69,25 @@ export default function LegalitiesPage() {
                 >
                   <div className="w-full shrink-0">
                     <Image
-                      src="/images/certificates/BIR_CERTIFICATE_1.png"
+                      src="/Landing-Page/client-resources/BIR_CERTIFICATE_1.png"
                       alt="BIR Certificate Page 1"
                       width={500}
                       height={700}
                       className="w-full h-auto cursor-pointer"
                       onClick={() =>
-                        setModalImage("/images/certificates/BIR_CERTIFICATE_1.png")
+                        setModalImage("/Landing-Page/client-resources/BIR_CERTIFICATE_1.png")
                       }
                     />
                   </div>
                   <div className="w-full shrink-0">
                     <Image
-                      src="/images/certificates/BIR_CERTIFICATE_2.png"
+                      src="/Landing-Page/client-resources/BIR_CERTIFICATE_2.png"
                       alt="BIR Certificate Page 2"
                       width={500}
                       height={700}
                       className="w-full h-auto cursor-pointer"
                       onClick={() =>
-                        setModalImage("/images/certificates/BIR_CERTIFICATE_2.png")
+                        setModalImage("/Landing-Page/client-resources/BIR_CERTIFICATE_2.png")
                       }
                     />
                   </div>
@@ -117,17 +117,17 @@ export default function LegalitiesPage() {
             <div>
               <h2 className="text-xl font-bold mb-4">Business Permit</h2>
               <p className="text-muted-foreground leading-relaxed">
-                The Business Permit granted to Domus Naturae affirms our compliance with local
+                The Business Permit granted to iQON ELITE Corporation affirms our compliance with local
                 business regulations, allowing us to operate legitimately and responsibly in our
                 community.
               </p>
             </div>
             <div
               className="cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setModalImage("/images/certificates/BUSINESS_PERMIT.png")}
+              onClick={() => setModalImage("/Landing-Page/client-resources/BUSINESS_PERMIT.png")}
             >
               <Image
-                src="/images/certificates/BUSINESS_PERMIT.png"
+                src="/Landing-Page/client-resources/BUSINESS_PERMIT.png"
                 alt="Business Permit"
                 width={500}
                 height={700}

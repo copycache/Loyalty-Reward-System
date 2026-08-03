@@ -1,5 +1,5 @@
-import { FrontHeader } from "@/components/front-header";
-import { FrontFooter } from "@/components/front-footer";
+import { Header } from "@/components/front/header";
+import { FrontFooter } from "@/components/front/footer";
 
 export default function FrontLayout({
   children,
@@ -8,8 +8,8 @@ export default function FrontLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <FrontHeader />
-      <main className="flex-1">{children}</main>
+      <Header />
+      <main className="pt-16 sm:pt-20">{children}</main>
       <FrontFooter />
     </div>
   );

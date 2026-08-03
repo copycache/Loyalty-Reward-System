@@ -6,7 +6,7 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('/image/upload', 'Member\MemberController@upload_image');
     Route::post('/video/upload', 'Member\MemberController@upload_video');
     Route::post('/service/charge', 'Member\MemberController@get_service_charge');
-    Route::post('/logout', 'SecretController@logout');
+    Route::post('/logout', 'Auth\LoginController@logout');
 
     //CASH IN/OUT
     Route::post('/cashin/get_transactions', 'Member\MemberCashInController@get_transactions');

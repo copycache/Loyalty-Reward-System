@@ -102,7 +102,7 @@ export default function WizardStep6() {
           <p className="text-muted-foreground mb-6">
             Your account has been created. Please check your email for verification.
           </p>
-          <Link href="/member/login">
+          <Link href="/auth/login">
             <Button className="bg-green-600 hover:bg-green-700">
               Proceed to Login
             </Button>

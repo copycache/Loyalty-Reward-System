@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
-use Laravel\Passport\HasApiTokens;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -49,16 +49,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'email_verified' => 'datetime',
     ];
-
-    public function findForPassport($username) 
-    {
-        $check_slot_code = \App\Models\Tbl_slot::owner()->where('slot_no', $username)->first();
-        if($check_slot_code)
-        {
-            $username = $check_slot_code->email;
-        }
-        return $this->where('email', $username)->orWhere('social_id', $username)->first();
-    }
 
     public function scopeJoinSlot($query)
     {

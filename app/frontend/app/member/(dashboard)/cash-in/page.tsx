@@ -688,7 +688,7 @@ export default function MemberCashInPage() {
                 ) : (
                   <>
                     <img
-                      src="/icons/proceed-icon.png"
+                      src="/front/img/upspeed-proceed-icon.png"
                       alt=""
                       className="h-6 w-6 mr-2"
                       onError={(e) => {

@@ -119,24 +119,24 @@ export default function AdminDashboardPage() {
   const loadTopEarners = async (filter?: { date_from?: string; date_to?: string }) => {
     if (!token) return;
     try {
-      const data = await apiPost<TopEarner[]>("/api/admin/load_topearner", filter || {}, token);
-      setTopEarners(data || []);
+      const res: any = await apiPost("/api/admin/load_topearner", filter || {}, token);
+      setTopEarners(res?.data ?? (Array.isArray(res) ? res : []));
     } catch {}
   };
 
   const loadTopEarnersAccumulated = async () => {
     if (!token) return;
     try {
-      const data = await apiPost<TopEarner[]>("/api/admin/load_topearner_accummulated", {}, token);
-      setTopEarnersAcc(data || []);
+      const res: any = await apiPost("/api/admin/load_topearner_accummulated", {}, token);
+      setTopEarnersAcc(res?.data ?? (Array.isArray(res) ? res : []));
     } catch {}
   };
 
   const loadTopDirects = async (filter?: { date_from?: string; date_to?: string }) => {
     if (!token) return;
     try {
-      const data = await apiPost<TopDirect[]>("/api/admin/load_topdirect", filter || {}, token);
-      setTopDirects(data || []);
+      const res: any = await apiPost("/api/admin/load_topdirect", filter || {}, token);
+      setTopDirects(res?.data ?? (Array.isArray(res) ? res : []));
     } catch {}
   };
 

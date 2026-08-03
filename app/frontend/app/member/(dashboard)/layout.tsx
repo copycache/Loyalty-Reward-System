@@ -73,7 +73,7 @@ const menuItems: MenuItem[] = [
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, user, loadUser, loadCurrentSlot, currentSlot, logout, loadPlanSettings, loadPlanLabel, _hydrated } = useAuthStore();
+  const { user, loadUser, loadCurrentSlot, currentSlot, logout, loadPlanSettings, loadPlanLabel, _hydrated } = useAuthStore();
   const [initialized, setInitialized] = useState(false);
 
   // Auto-logout after 10 minutes of inactivity
@@ -100,32 +100,41 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   }, [isVerified, moduleSettings, isFirstSlot]);
 
   useEffect(() => {
-    if (!_hydrated) return; // Wait for localStorage hydration
-    if (!token) {
-      router.replace("/member/login");
+    if (!_hydrated) return;
+    const isLoggedIn = localStorage.getItem("is_logged_in") === "true";
+    if (!isLoggedIn) {
+      router.replace("/auth/login");
       return;
     }
     const init = async () => {
+      const timeoutPromise = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error("Init timeout")), 30000)
+      );
       try {
-        if (!user) await loadUser();
-        await loadCurrentSlot();
-        await loadPlanSettings();
-        await loadPlanLabel();
+        await Promise.race([
+          (async () => {
+            if (!user) await loadUser();
+            await loadCurrentSlot();
+            await loadPlanSettings();
+            await loadPlanLabel();
+          })(),
+          timeoutPromise,
+        ]);
       } catch {
-        // If load fails, token may be invalid
+        // If load fails or times out, session may be invalid - still show UI
       }
       setInitialized(true);
     };
     init();
-  }, [token, _hydrated]);
+  }, [_hydrated]);
 
   const handleLogout = () => {
     logout();
     toast.success("You have been logged out.");
-    router.push("/member/login");
+    router.push("/auth/login");
   };
 
-  if (!_hydrated || !token || !initialized) {
+  if (!_hydrated || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full" />
@@ -143,14 +152,14 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         <SidebarHeader className="p-4">
           <Link href="/member/dashboard" className="flex items-center gap-2">
             <img
-              src="/images/logo/logo.png"
+              src="/member_img/client-resources/logo/logo.png"
               alt="Logo"
               className="h-8"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
-            <span className="font-bold text-lg text-green-700">Travel Connect</span>
+            <span className="font-bold text-lg">iQON ELITE</span>
           </Link>
           {currentSlot && (
             <div className="mt-3 text-xs text-muted-foreground bg-muted rounded px-2 py-1">

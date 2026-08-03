@@ -13,13 +13,13 @@ export default function MemberNotifyPage() {
   const { token, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!token) router.replace("/member/login");
+    if (!token) router.replace("/auth/login");
   }, [token, router]);
 
   const handleLogout = async () => {
     await logout();
     toast.success("You have been logged out.");
-    router.push("/member/login");
+    router.push("/auth/login");
   };
 
   return (

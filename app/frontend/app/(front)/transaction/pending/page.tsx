@@ -8,7 +8,7 @@ export default function TransactionPendingPage() {
       <div className="container mx-auto px-4 text-center max-w-md">
         <div className="w-24 h-24 relative mx-auto mb-6">
           <Image
-            src="/images/front/pending.png"
+            src="/front/img/pending.png"
             alt="Pending"
             fill
             className="object-contain rounded-full"

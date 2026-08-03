@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { apiPost } from "@/lib/api";
+import { apiPost, resolveAssetUrl } from "@/lib/api";
 import { useCartStore } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,7 +45,10 @@ export default function ProductsPage() {
         setCategories(data);
         loadProducts("all");
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
 
   const loadProducts = (type: string | number) => {
@@ -68,7 +71,7 @@ export default function ProductsPage() {
   return (
     <div>
       {/* Hero Banner */}
-      <section className="py-16 bg-linear-to-b from-green-50 to-white text-center">
+      <section className="py-16 bg-linear-to-b from-zinc-50 to-white text-center">
         <div className="container mx-auto px-4">
           <h5 className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Features</h5>
           <h1 className="text-3xl md:text-5xl font-bold">
@@ -81,7 +84,7 @@ export default function ProductsPage() {
       <section className="py-8 bg-white">
         <div className="container mx-auto px-4 text-center">
           <Image
-            src="/images/Landing-Page/client-resources/whole products iqon.png"
+            src="/Landing-Page/client-resources/whole products iqon.png"
             alt="Whole Products"
             width={600}
             height={300}
@@ -155,7 +158,7 @@ export default function ProductsPage() {
                     <div className="relative aspect-square overflow-hidden bg-zinc-100">
                       {product.item_thumbnail && (
                         <Image
-                          src={product.item_thumbnail}
+                          src={resolveAssetUrl(product.item_thumbnail)}
                           alt={product.item_sku}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -253,7 +256,7 @@ export default function ProductsPage() {
             </div>
             <div className="flex justify-center">
               <Image
-                src="/images/Landing-Page/client-resources/iqon serum.png"
+                src="/Landing-Page/client-resources/iqon serum.png"
                 alt="IQON ELITE Serum"
                 width={350}
                 height={350}
@@ -270,7 +273,7 @@ export default function ProductsPage() {
           <div className="grid md:grid-cols-2 gap-8 items-center max-w-5xl mx-auto">
             <div className="order-2 md:order-1 flex justify-center">
               <Image
-                src="/images/Landing-Page/client-resources/iqon coffee.png"
+                src="/Landing-Page/client-resources/iqon coffee.png"
                 alt="IQON ELITE Coffee"
                 width={350}
                 height={350}
