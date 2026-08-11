@@ -1,9 +1,8 @@
 "use client";
 
-import { create } from "zustand";
+import { useState, useEffect } from "react";
 import { apiPost, apiGet, ApiError, API_BASE_URL } from "@/lib/api";
 
-// Types for our data
 interface User {
   id: number;
   name: string;
@@ -110,18 +109,178 @@ function clearSession() {
   LOCAL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 }
 
-const LOGGED_OUT_STATE = {
-  token: null,
-  user: null,
-  userType: null,
-  currentSlot: null,
-  moduleSettings: null,
-  planSettings: null,
-  planLabel: null,
-  isAuthenticated: false,
-};
+let state: AuthState;
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function setState(updates: Partial<AuthState>) {
+  state = { ...state, ...updates };
+  listeners.forEach((listener) => listener());
+}
+
+async function login(email: string, password: string): Promise<User> {
+  setState({ isLoading: true });
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || err.hint || "Invalid credentials");
+    }
+
+    const body = await response.json();
+    const user: User = body.user || body;
+    const apiToken = body.token || "";
+
+    if (apiToken) {
+      localStorage.setItem("auth", apiToken);
+    }
+
+    saveSession(user.type);
+    setState({
+      user,
+      userType: user.type,
+      token: apiToken || "session_auth",
+      isAuthenticated: true,
+      isLoading: false,
+    });
+
+    const isRegularMember = user.type !== "admin" && user.type !== "cashier";
+    if (isRegularMember) {
+      try {
+        await loadCurrentSlot();
+        await loadPlanSettings();
+        await loadPlanLabel();
+      } catch {
+      }
+    }
+
+    return user;
+  } catch (error) {
+    setState({ isLoading: false });
+    throw error;
+  }
+}
+
+async function logout() {
+  setState({ isLoading: true });
+
+  try {
+    await fetch(`${API_BASE_URL}/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+  } catch {
+  }
+
+  clearSession();
+  clear();
+  setState({ isLoading: false });
+}
+
+function setToken(token: string) {
+  localStorage.setItem("auth", token);
+  setState({ token, isAuthenticated: true });
+}
+
+function setHydrated() {
+  setState({ _hydrated: true });
+}
+
+async function loadUser() {
+  try {
+    const user = await apiGet<User>("/api/user_data");
+    const storedToken = localStorage.getItem("auth") || "session_auth";
+    setState({ user, userType: user.type, token: storedToken, isAuthenticated: true });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      clear();
+    } else {
+      console.error("Failed to load user:", error);
+    }
+  }
+}
+
+async function loadCurrentSlot(slotId?: string | null) {
+  const targetSlotId = slotId || localStorage.getItem("slot_id");
+
+  try {
+    const slot = await apiPost<CurrentSlot>("/api/current_slot", {
+      slot_id: targetSlotId,
+    });
+    if (slot) {
+      localStorage.setItem("slot_id", String(slot.slot_id));
+      setState({ currentSlot: slot, moduleSettings: slot.module_settings });
+    }
+  } catch (error) {
+    console.error("Failed to load slot:", error);
+  }
+}
+
+async function loadPlanSettings() {
+  try {
+    const planSettings = await apiPost<Record<string, number>>(
+      "/api/member/get_plan_settings",
+      {}
+    );
+    setState({ planSettings });
+  } catch (error) {
+    console.error("Failed to load plan settings:", error);
+  }
+}
+
+async function loadPlanLabel() {
+  try {
+    const planLabel = await apiPost<Record<string, string>>(
+      "/api/member/get_plan_label",
+      {}
+    );
+    setState({ planLabel });
+  } catch (error) {
+    console.error("Failed to load plan label:", error);
+  }
+}
+
+function setSlotId(id: string) {
+  localStorage.setItem("slot_id", id);
+}
+
+function getSlotId(): string | null {
+  return typeof window !== "undefined" ? localStorage.getItem("slot_id") : null;
+}
+
+function clear() {
+  clearSession();
+  setState({
+    token: null,
+    user: null,
+    userType: null,
+    currentSlot: null,
+    moduleSettings: null,
+    planSettings: null,
+    planLabel: null,
+    isAuthenticated: false,
+  });
+}
+
+state = {
   token: null,
   user: null,
   userType: null,
@@ -133,153 +292,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   _hydrated: false,
 
-  // Login - sends email/password to the API
-  login: async (email, password) => {
-    set({ isLoading: true });
+  login,
+  logout,
+  setToken,
+  setHydrated,
+  loadUser,
+  loadCurrentSlot,
+  loadPlanSettings,
+  loadPlanLabel,
+  setSlotId,
+  getSlotId,
+  clear,
+};
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
+export function useAuthStore(): AuthState;
+export function useAuthStore<T>(selector: (state: AuthState) => T): T;
+export function useAuthStore(selector?: (state: AuthState) => unknown) {
+  const [, setTick] = useState(0);
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || err.hint || "Invalid credentials");
-      }
+  useEffect(() => {
+    const unsubscribe = subscribe(() => setTick((tick) => tick + 1));
+    return unsubscribe;
+  }, []);
 
-      const body = await response.json();
-      const user: User = body.user || body;
-      const apiToken = body.token || "";
+  return selector ? selector(state) : state;
+}
 
-      if (apiToken) {
-        localStorage.setItem("auth", apiToken);
-      }
-
-      saveSession(user.type);
-      set({
-        user,
-        userType: user.type,
-        token: apiToken || "session_auth",
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      // For regular members, load additional data
-      const isRegularMember = user.type !== "admin" && user.type !== "cashier";
-      if (isRegularMember) {
-        try {
-          await get().loadCurrentSlot();
-          await get().loadPlanSettings();
-          await get().loadPlanLabel();
-        } catch {
-          // non-critical
-        }
-      }
-
-      return user;
-    } catch (error) {
-      set({ isLoading: false });
-      throw error;
-    }
-  },
-
-  // Logout - calls API then clears local state
-  logout: async () => {
-    set({ isLoading: true });
-
-    try {
-      await fetch(`${API_BASE_URL}/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-    } catch {
-      // ignore
-    }
-
-    clearSession();
-    set({ ...LOGGED_OUT_STATE, isLoading: false });
-  },
-
-  setToken: (token) => {
-    localStorage.setItem("auth", token);
-    set({ token, isAuthenticated: true });
-  },
-
-  setHydrated: () => set({ _hydrated: true }),
-
-  // Get current user data (restores session on page refresh)
-  loadUser: async () => {
-    try {
-      const user = await apiGet<User>("/api/user_data");
-      const storedToken = localStorage.getItem("auth") || "session_auth";
-      set({ user, userType: user.type, token: storedToken, isAuthenticated: true });
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        get().clear();
-      } else {
-        console.error("Failed to load user:", error);
-      }
-    }
-  },
-
-  // Get current slot info
-  loadCurrentSlot: async (slotId) => {
-    const targetSlotId = slotId || localStorage.getItem("slot_id");
-
-    try {
-      const slot = await apiPost<CurrentSlot>("/api/current_slot", {
-        slot_id: targetSlotId,
-      });
-      if (slot) {
-        localStorage.setItem("slot_id", String(slot.slot_id));
-        set({ currentSlot: slot, moduleSettings: slot.module_settings });
-      }
-    } catch (error) {
-      console.error("Failed to load slot:", error);
-    }
-  },
-
-  // Get plan settings (e.g., commission rates)
-  loadPlanSettings: async () => {
-    try {
-      const planSettings = await apiPost<Record<string, number>>(
-        "/api/member/get_plan_settings",
-        {}
-      );
-      set({ planSettings });
-    } catch (error) {
-      console.error("Failed to load plan settings:", error);
-    }
-  },
-
-  // Get plan labels
-  loadPlanLabel: async () => {
-    try {
-      const planLabel = await apiPost<Record<string, string>>(
-        "/api/member/get_plan_label",
-        {}
-      );
-      set({ planLabel });
-    } catch (error) {
-      console.error("Failed to load plan label:", error);
-    }
-  },
-
-  setSlotId: (id) => localStorage.setItem("slot_id", id),
-
-  getSlotId: () =>
-    typeof window !== "undefined" ? localStorage.getItem("slot_id") : null,
-
-  // Clear everything (logout locally)
-  clear: () => {
-    clearSession();
-    set(LOGGED_OUT_STATE);
-  },
-}));
+export namespace useAuthStore {
+  export function getState(): AuthState {
+    return state;
+  }
+}

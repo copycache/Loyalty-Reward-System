@@ -5,28 +5,31 @@ namespace App\Globals;
 
 class Visitor
 {
+	private static $file = "visitor_counter.txt";
+
 	public static function use_the_counter()
 	{
 		$counter = 0;
-		$handle  = fopen("visitor_counter.txt", "r");
+		$handle  = @fopen(self::$file, "c+");
 		if($handle)
 		{
 			$counter = (int ) fread($handle,20000);
-			fclose($handle);
 			$counter++;
-			$handle = fopen("visitor_counter.txt", "w");
-			fwrite($handle,$counter) ;
-			fclose($handle) ;	
+			rewind($handle);
+			ftruncate($handle, 0);
+			fwrite($handle, $counter);
+			fclose($handle);
 		}
 	}
 
 	public static function get_all_visitors()
 	{
 		$counter = 0;
-		$handle = fopen("visitor_counter.txt", "r");
+		$handle = @fopen(self::$file, "c+");
 		if($handle)
 		{
 			$counter = (int ) fread($handle,20000);
+			fclose($handle);
 		}
 
 		$return['all'] 	= $counter;
