@@ -20,9 +20,10 @@ class CashIn
 	public static function get_transactions($params = null, $slot_owner = null)
 	{
 		// dd($params['user']);
-		if($params['user'] == 'admin1')
+		if(($params['user'] ?? null) == 'admin')
 		{
-			if($params['position'] == 'superadmin' || $params['position'] == 'admin1')
+			$position = $params['position'] ?? 'superadmin'; //default to superadmin if position is not sent
+			if($position == 'superadmin' || $position == 'admin')
 			{
 				$data  							= Tbl_cash_in_proofs::method();
 			}
