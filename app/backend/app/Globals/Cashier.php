@@ -446,7 +446,7 @@ class Cashier
 				$payment_given										= json_encode($payment);
 				$cashier_user_id 									= $retailer;
 
-				$return = Self::create_order($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,6,0,0,0,0,$data['shipping_fee'],$data['handling_fee'],$data['grandtotal']);
+				$return = Self::create_order($ordered_item, $vat, $buyer_slot_id, $cashier_user_id,'ecommerce', $delivery_method, null, 0, 0, null,$address,5,0,0,0,0,$data['shipping_fee'],$data['handling_fee'],$data['grandtotal']);
 				return $return;
 			}
 		}
@@ -1109,7 +1109,7 @@ class Cashier
 			$ordered_item										= json_encode($items);
 			$vat												= 0;
 			$buyer_slot_id										= $data['customer_info'];
-			$return = Self::create_dropshipping_order($ordered_item, $vat, $buyer_slot_id, 1,'ecommerce', 'delivery', null, 0, 0, null,$address,6,0,0,0,0,$data["shipping_fee"],0, $grand_total);
+			$return = Self::create_dropshipping_order($ordered_item, $vat, $buyer_slot_id, 1,'ecommerce', 'delivery', null, 0, 0, null,$address,5,0,0,0,0,$data["shipping_fee"],0, $grand_total);
 			return $return;
 		}
 	}
@@ -1154,7 +1154,7 @@ class Cashier
 				$insert['delivery_method']		= $delivery_method;
 				$insert['delivery_charge']		= $shipping_fee;
 				$insert['subtotal']				= $subtotal;
-				$insert['voucher']				= $voucher_deduct;
+				//$insert['voucher']				= $voucher_deduct;
 				$insert['buyer_name']			= $buyer['first_name'] . ' ' . $buyer['last_name'];
 				$insert['buyer_address']		= $address;
 				$insert['buyer_contact_number']	= $buyer['contact'];
@@ -1163,7 +1163,7 @@ class Cashier
 				$insert['buyer_slot_code']		= 'N/A';
 				$insert['buyer_slot_id']		= null;
 				$insert['order_date_created']	= Carbon::now();
-				$insert['dragonpay_charged']	= $dragonpay_charged;
+				//$insert['dragonpay_charged']	= $dragonpay_charged;
 				$insert['change']				= $change;
 				$insert['discount']				= json_encode($discount);
 				$insert['grand_total']			= $grand_total;
