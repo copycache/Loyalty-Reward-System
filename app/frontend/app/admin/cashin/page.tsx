@@ -69,7 +69,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminCashInPage() {
-  const { token } = useAuthStore();
+  const { token, user, position } = useAuthStore();
   const [transactions, setTransactions] = useState<CashInTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -100,7 +100,7 @@ export default function AdminCashInPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const body: any = { user: "admin1", position: "superadmin"}; //hotfix -erickson
+      const body: any = { user: user?.type, position: position};
       if (statusFilter) body.cash_in_status = statusFilter;
       if (search) body.cash_in_owner = search;
       if (methodFilter) body.cash_in_method_id = methodFilter;
