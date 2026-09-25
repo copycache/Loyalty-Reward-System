@@ -164,9 +164,13 @@ export default function AdminOrdersPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const body: any = { page, search, per_page: 15 };
-      if (statusFilter) body.status = statusFilter;
-      if (paymentFilter) body.payment = paymentFilter;
+      const body: any = {
+        page,
+        search,
+        per_page: 15,
+        status: statusFilter || 'all',
+        payment: paymentFilter || 'All'
+      };
       if (dateFrom) body.from = dateFrom;
       if (dateTo) body.to = dateTo;
 
@@ -636,8 +640,8 @@ export default function AdminOrdersPage() {
                     >
                       {o.items?.length
                         ? o.items.map((it: any, idx: number) => (
-                            <div key={idx}>{it.item_sku || it.sku || "—"}</div>
-                          ))
+                          <div key={idx}>{it.item_sku || it.sku || "—"}</div>
+                        ))
                         : "—"}
                     </TableCell>
                     <TableCell
@@ -646,8 +650,8 @@ export default function AdminOrdersPage() {
                     >
                       {o.items?.length
                         ? o.items.map((it: any, idx: number) => (
-                            <div key={idx}>{it.quantity || 0}</div>
-                          ))
+                          <div key={idx}>{it.quantity || 0}</div>
+                        ))
                         : "—"}
                     </TableCell>
                     <TableCell
@@ -746,7 +750,7 @@ export default function AdminOrdersPage() {
                       <>
                         <TableCell className="text-center">
                           {o.order_status === "pending" ||
-                          o.order_status === "for_delivery" ? (
+                            o.order_status === "for_delivery" ? (
                             <div className="flex items-center gap-1">
                               <Input
                                 className="h-8 w-24 text-xs"
@@ -773,7 +777,7 @@ export default function AdminOrdersPage() {
                         </TableCell>
                         <TableCell className="text-center">
                           {o.order_status === "pending" ||
-                          o.order_status === "for_delivery" ? (
+                            o.order_status === "for_delivery" ? (
                             <div className="flex items-center gap-1">
                               <Input
                                 className="h-8 w-24 text-xs"
@@ -877,68 +881,68 @@ export default function AdminOrdersPage() {
                   <TableBody>
                     {Array.isArray(orderDetail.item || orderDetail.items)
                       ? (orderDetail.item || orderDetail.items).map(
-                          (details: any, idx: number) => {
-                            const discount =
-                              orderDetail.discount?.[idx]?.percentage || 0;
-                            const discountedPrice =
-                              Number(details.item_price) - Number(discount);
-                            return (
-                              <TableRow key={idx}>
-                                <TableCell className="text-center">
-                                  {details.order_id || selectedOrder?.order_id}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {details.item_sku || "—"}
-                                </TableCell>
-                                <TableCell className="text-center max-w-[250px]">
-                                  <div
-                                    className="text-xs line-clamp-3"
-                                    dangerouslySetInnerHTML={{
-                                      __html:
-                                        details.item_description ||
-                                        details.product_name ||
-                                        details.name ||
-                                        "—",
-                                    }}
-                                  />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {details.quantity || 0}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {discount
-                                    ? `${walletCurrency}${Number(discount).toFixed(2)}`
-                                    : "No Discount"}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {discount ? (
-                                    <>
-                                      <span className="line-through text-muted-foreground mr-1">
-                                        {walletCurrency}
-                                        {Number(details.item_price).toFixed(2)}
-                                      </span>
-                                      <span>
-                                        {walletCurrency}
-                                        {discountedPrice.toFixed(2)}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <>
+                        (details: any, idx: number) => {
+                          const discount =
+                            orderDetail.discount?.[idx]?.percentage || 0;
+                          const discountedPrice =
+                            Number(details.item_price) - Number(discount);
+                          return (
+                            <TableRow key={idx}>
+                              <TableCell className="text-center">
+                                {details.order_id || selectedOrder?.order_id}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {details.item_sku || "—"}
+                              </TableCell>
+                              <TableCell className="text-center max-w-[250px]">
+                                <div
+                                  className="text-xs line-clamp-3"
+                                  dangerouslySetInnerHTML={{
+                                    __html:
+                                      details.item_description ||
+                                      details.product_name ||
+                                      details.name ||
+                                      "—",
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {details.quantity || 0}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {discount
+                                  ? `${walletCurrency}${Number(discount).toFixed(2)}`
+                                  : "No Discount"}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {discount ? (
+                                  <>
+                                    <span className="line-through text-muted-foreground mr-1">
                                       {walletCurrency}
                                       {Number(details.item_price).toFixed(2)}
-                                    </>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {walletCurrency}
-                                  {(
-                                    discountedPrice * Number(details.quantity)
-                                  ).toFixed(2)}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          }
-                        )
+                                    </span>
+                                    <span>
+                                      {walletCurrency}
+                                      {discountedPrice.toFixed(2)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    {walletCurrency}
+                                    {Number(details.item_price).toFixed(2)}
+                                  </>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {walletCurrency}
+                                {(
+                                  discountedPrice * Number(details.quantity)
+                                ).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        }
+                      )
                       : null}
                     {orderDetail.delivery_charge && (
                       <TableRow>
@@ -967,8 +971,8 @@ export default function AdminOrdersPage() {
                         {walletCurrency}
                         {Number(
                           orderDetail.grand_total ||
-                            selectedOrder?.grand_total ||
-                            0
+                          selectedOrder?.grand_total ||
+                          0
                         ).toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -1157,9 +1161,9 @@ export default function AdminOrdersPage() {
                             setEditMethod((prev) =>
                               prev
                                 ? {
-                                    ...prev,
-                                    method_charge: e.target.value,
-                                  }
+                                  ...prev,
+                                  method_charge: e.target.value,
+                                }
                                 : prev
                             )
                           }
@@ -1174,9 +1178,9 @@ export default function AdminOrdersPage() {
                             setEditMethod((prev) =>
                               prev
                                 ? {
-                                    ...prev,
-                                    method_discount: e.target.value,
-                                  }
+                                  ...prev,
+                                  method_discount: e.target.value,
+                                }
                                 : prev
                             )
                           }
