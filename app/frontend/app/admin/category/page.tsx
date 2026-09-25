@@ -39,10 +39,12 @@ import {
   Trash2,
   RefreshCw,
 } from "lucide-react";
+import { off } from "process";
 
 interface Category {
   id: number;
-  name: string;
+  category_name: string;
+  name?: string;
   description?: string;
   products_count?: number;
   status: string;
@@ -79,7 +81,7 @@ export default function AdminCategoryPage() {
     setLoading(true);
 
     try {
-      const res = await apiPost<CategoryResponse>("/api/admin/category/list", {}, token);
+      const res = await apiPost<CategoryResponse>("/api/category/load_data", {}, token);
       setCategories(Array.isArray(res) ? res : res.data || []);
     } catch {
       toast.error("Failed to load categories");
@@ -101,7 +103,7 @@ export default function AdminCategoryPage() {
   function openEdit(item: Category) {
     setEditItem(item);
     setForm({
-      name: item.name,
+      name: item.category_name || "",
       description: item.description || "",
       status: item.status,
     });
@@ -118,21 +120,35 @@ export default function AdminCategoryPage() {
     setSaving(true);
 
     try {
-      const body: Record<string, string> = {
-        name: form.name,
+      const body: Record<string, any> = {
+        category_name: form.name,
         description: form.description,
         status: form.status,
+        sub_category:[{ id: 0, category_id: 0,
+        sub_category_name:"", archive: 0}],
       };
       if (editItem) body.id = String(editItem.id);
 
       const endpoint = editItem
-        ? "/api/admin/category/update"
-        : "/api/admin/category/create";
+        ? "/api/category/update_category"
+        : "/api/category/save_category";
 
-      await apiPost(endpoint, body, token);
+     /*  await apiPost(endpoint, body, token);
+      toast.success(editItem ? "Category updated" : "Category created");
+      setDialogOpen(false);
+      loadCategories(); old code*/
+
+      const response: any = await apiPost(endpoint, body, token);
+
+      if (response.status_code === 401) {
+        toast.error("Category already exists");
+        return;
+      }
+
       toast.success(editItem ? "Category updated" : "Category created");
       setDialogOpen(false);
       loadCategories();
+
     } catch {
       toast.error("Failed to save category");
     }
@@ -144,7 +160,7 @@ export default function AdminCategoryPage() {
     if (!token) return;
 
     try {
-      await apiPost("/api/admin/category/delete", { id }, token);
+      await apiPost("/api/category/delete_category", { id }, token);
       toast.success("Category deleted");
       loadCategories();
     } catch {
@@ -203,7 +219,7 @@ export default function AdminCategoryPage() {
                 ) : (
                   categories.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell className="font-medium">{c.category_name}</TableCell>
                       <TableCell className="text-muted-foreground max-w-[200px] truncate">
                         {c.description || "—"}
                       </TableCell>

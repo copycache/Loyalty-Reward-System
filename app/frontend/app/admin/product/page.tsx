@@ -937,7 +937,7 @@ export default function AdminProductsPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs">Product SKU</Label>
                   <Input
@@ -1005,7 +1005,7 @@ export default function AdminProductsPage() {
                   }}
                 />
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs">Item PV</Label>
                   <Input
@@ -1054,7 +1054,7 @@ export default function AdminProductsPage() {
                 <div className="space-y-1">
                   <Label className="text-xs">Category</Label>
                   <Select
-                    value={String(item.item_category)}
+                    value={item.item_category != null && item.item_category !== "" ? String(item.item_category) : undefined}
                     onValueChange={(v) => {
                       setItem((p: any) => ({
                         ...p,
@@ -1079,7 +1079,7 @@ export default function AdminProductsPage() {
                 <div className="space-y-1">
                   <Label className="text-xs">Sub-Category</Label>
                   <Select
-                    value={String(item.item_sub_category || "")}
+                    value={item.item_sub_category != null && item.item_sub_category !== "" ? String(item.item_sub_category) : undefined}
                     onValueChange={(v) =>
                       setItem((p: any) => ({ ...p, item_sub_category: v }))
                     }
@@ -1117,7 +1117,7 @@ export default function AdminProductsPage() {
                 <div className="space-y-1">
                   <Label className="text-xs">Bind Membership</Label>
                   <Select
-                    value={String(item.bind_membership_id)}
+                    value={item.bind_membership_id != null ? String(item.bind_membership_id) : undefined}
                     onValueChange={(v) =>
                       setItem((p: any) => ({ ...p, bind_membership_id: v }))
                     }
@@ -1170,11 +1170,11 @@ export default function AdminProductsPage() {
                   <div className="text-sm font-semibold text-muted-foreground border-b pb-2">
                     Membership Package Details
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs">Membership</Label>
                       <Select
-                        value={String(item.membership_id)}
+                        value={item.membership_id != null ? String(item.membership_id) : undefined}
                         onValueChange={(v) =>
                           setItem((p: any) => ({ ...p, membership_id: v }))
                         }
@@ -1856,9 +1856,7 @@ export default function AdminProductsPage() {
                       Cancel
                     </Button>
                     <Button onClick={handleSubmit} disabled={submitted}>
-                      {submitted
-                        ? "Saving..."
-                        : `${action === "add" ? "Create" : "Update"} Commission`}
+                      {submitted ? "Saving..." : "Update Commission"}
                     </Button>
                   </div>
                 </TabsContent>
