@@ -77,6 +77,7 @@ interface AuthState {
   token: string | null;
   user: User | null;
   userType: string | null;
+  position: string | null;
   currentSlot: CurrentSlot | null;
   moduleSettings: Record<string, number> | null;
   planSettings: Record<string, number> | null;
@@ -125,6 +126,10 @@ function setState(updates: Partial<AuthState>) {
   listeners.forEach((listener) => listener());
 }
 
+async function fetchPosition(token: string): Promise<string | null> {
+  return apiPost<string>("/api/get_user_details", {}, token).catch(()=> null)
+}
+
 async function login(email: string, password: string): Promise<User> {
   setState({ isLoading: true });
 
@@ -153,6 +158,12 @@ async function login(email: string, password: string): Promise<User> {
     }
 
     saveSession(user.type);
+    const resolvedToken = apiToken || "session_auth";
+
+    let position: string | null = null;
+    if (user.type === "admin") {
+      position = await fetchPosition(resolvedToken)
+    }
     setState({
       user,
       userType: user.type,
@@ -208,7 +219,12 @@ async function loadUser() {
   try {
     const user = await apiGet<User>("/api/user_data");
     const storedToken = localStorage.getItem("auth") || "session_auth";
-    setState({ user, userType: user.type, token: storedToken, isAuthenticated: true });
+
+    let position: string | null = null;
+    if (user.type === "admin") {
+      position = await fetchPosition(storedToken)
+    }
+    setState({ user, userType: user.type, token: storedToken, isAuthenticated: true, position });
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       clear();
@@ -272,6 +288,7 @@ function clear() {
     token: null,
     user: null,
     userType: null,
+    position: null, 
     currentSlot: null,
     moduleSettings: null,
     planSettings: null,
@@ -284,6 +301,7 @@ state = {
   token: null,
   user: null,
   userType: null,
+  position: null,
   currentSlot: null,
   moduleSettings: null,
   planSettings: null,
