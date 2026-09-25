@@ -100,7 +100,7 @@ export default function AdminCashInPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const body: any = {};
+      const body: any = { user: "admin1", position: "superadmin"}; //hotfix -erickson
       if (statusFilter) body.cash_in_status = statusFilter;
       if (search) body.cash_in_owner = search;
       if (methodFilter) body.cash_in_method_id = methodFilter;
