@@ -75,7 +75,7 @@ export default function AdminCashierPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await apiPost<any>("/api/admin/cashier/branches", filter, token);
+      const res = await apiPost<any>("api/branch/cashier/get_cashier", filter, token);
       setBranchList(res?.data || []);
       setBranchData(res?.data?.length > 0 ? 1 : 0);
       setTotalSales(res?.data?.reduce((s: number, b: any) => s + (Number(b.total_sales) || 0), 0) || 0);
@@ -85,7 +85,7 @@ export default function AdminCashierPage() {
 
   const loadLocations = useCallback(async () => {
     if (!token) return;
-    try { setLocationList(await apiPost<any[]>("/api/admin/cashier/locations", {}, token) || []); }
+    try { setLocationList(await apiPost<any[]>("/api/branch/cashier/get_location", {}, token) || []); }
     catch { /* ignore */ }
   }, [token]);
 
