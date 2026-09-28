@@ -142,7 +142,7 @@ Route::group(['middleware' => ['auth:api', 'admin']], function () {
     Route::post('/branch/cashier/generate_codes', 'Admin\AdminCodeController@generate_codes');
     Route::post('/branch/cashier/get_codes', 'Admin\AdminCodeController@get_codes');
     Route::post('/branch/cashier/delete_code', 'Admin\AdminCodeController@delete_code');
-
+    
     //AdminPayout
     Route::post('/payout/charge_settings', 'Admin\AdminPayoutController@charge_settings');
     Route::post('/payout/get_charge_settings', 'Admin\AdminPayoutController@get_charge_settings');
