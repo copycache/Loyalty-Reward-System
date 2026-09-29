@@ -13,6 +13,7 @@ use App\Models\Tbl_slot;
 use App\Models\Tbl_membership;
 use App\Models\Tbl_unilevel_distribute;
 use App\Models\Tbl_unilevel_distribute_full;
+use App\Models\Tbl_membership_unilevel_level;
 
 use Request;
 use Carbon\Carbon;
@@ -122,4 +123,41 @@ class AdminUnilevelController extends AdminController
 
 		return response()->json($return, 200);
 	}
+
+
+
+	public function list()
+	{
+		// 1. IF THE FRONTEND IS SAVING DATA
+		// The frontend sends { levels: [...] } when the user clicks 'Save'
+		if (Request::has('levels')) {
+			$levels = Request::input('levels'); // Get the array of levels from the request
+			
+			foreach ($levels as $levelData) {
+				$levelIndex = $levelData['level'] ?? null;
+				$commission = $levelData['commission'] ?? 0;
+				
+				if ($levelIndex) {
+					// Update the commission percentage for this specific level across all memberships
+					Tbl_membership_unilevel_level::where('membership_level', $levelIndex)
+						->update(['membership_percentage' => $commission]);
+				}
+			}
+        
+			// Return a success message back to the frontend
+			return response()->json(['status' => 'success']);
+		}
+
+		// 2. IF THE FRONTEND IS JUST FETCHING DATA (Page Load)
+		// We grab the existing levels from the database table. 
+		// We group by 'membership_level' to ensure we only send one record per level back to the frontend.
+		$levels = Tbl_membership_unilevel_level::selectRaw('membership_level as level, MAX(membership_percentage) as commission')
+			->groupBy('membership_level')
+			->orderBy('membership_level', 'asc')
+			->get();
+
+		// Send the data back as JSON
+		return response()->json($levels);
+	}
+
 }

@@ -309,6 +309,11 @@ Route::group(['middleware' => ['auth:api', 'admin']], function () {
     Route::post('/category/edit', 'Admin\AdminProductCategoryController@edit');
     Route::post('/category/update_category', 'Admin\AdminProductCategoryController@update_category');
     Route::post('/category/delete_category', 'Admin\AdminProductCategoryController@delete_category');
+
+    // FOR UNILEVEL (Ced)
+    Route::post('/admin/unilevel/list', 'Admin\AdminUnilevelController@list');
+    Route::post('/admin/unileveltwo/list', 'Admin\AdminUnilevelTwoController@list'); 
+
 });
 
     Route::group(['middleware' => ['auth:api', 'member']], function () {

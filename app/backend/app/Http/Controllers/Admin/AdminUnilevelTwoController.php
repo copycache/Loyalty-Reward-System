@@ -15,6 +15,7 @@ use App\Models\Tbl_override_points;
 use App\Models\Tbl_membership_unilevel_level;
 use App\Models\Tbl_dynamic_compression_record;
 
+
 use Request;
 use Carbon\Carbon;
 
@@ -244,4 +245,32 @@ class AdminUnilevelTwoController extends AdminController
 
 		return response()->json($return, 200);
 	}
+
+	public function list()
+	{
+		// 1. IF THE FRONTEND IS SAVING DATA
+		if (Request::has('levels')) {
+			$levels = Request::input('levels');
+			
+			foreach ($levels as $levelData) {
+				$levelIndex = $levelData['level'] ?? null;
+				$commission = $levelData['commission'] ?? 0;
+				
+				if ($levelIndex) {
+					Tbl_membership_unilevel_level::where('membership_level', $levelIndex)
+						->update(['membership_percentage' => $commission]);
+				}
+			}
+			return response()->json(['status' => 'success']);
+		}
+
+		// 2. IF THE FRONTEND IS JUST FETCHING DATA
+		$levels = Tbl_membership_unilevel_level::selectRaw('membership_level as level, MAX(membership_percentage) as commission')
+			->groupBy('membership_level')
+			->orderBy('membership_level', 'asc')
+			->get();
+
+		return response()->json($levels);
+	}
+
 }
