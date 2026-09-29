@@ -75,7 +75,7 @@ export default function AdminCashierPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await apiPost<any>("api/branch/cashier/get_cashier", filter, token);
+      const res = await apiPost<any>("/api/branch/cashier/get_cashier", filter, token);
       setBranchList(res?.data || []);
       setBranchData(res?.data?.length > 0 ? 1 : 0);
       setTotalSales(res?.data?.reduce((s: number, b: any) => s + (Number(b.total_sales) || 0), 0) || 0);
@@ -91,13 +91,13 @@ export default function AdminCashierPage() {
 
   const loadStockistLevels = useCallback(async () => {
     if (!token) return;
-    try { setStockistList(await apiPost<any[]>("/api/admin/cashier/stockist-levels", {}, token) || []); }
+    try { setStockistList(await apiPost<any[]>("/api/branch/cashier/get_stockist", {}, token) || []); }
     catch { /* ignore */ }
   }, [token]);
 
   const loadPaymentMethods = useCallback(async () => {
     if (!token) return;
-    try { setPaymentMethod(await apiPost<any[]>("/api/admin/cashier/payment-methods", {}, token) || []); }
+    try { setPaymentMethod(await apiPost<any[]>("/api/branch/cashier/get_payment_method", {}, token) || []); }
     catch { /* ignore */ }
   }, [token]);
 

@@ -35,7 +35,7 @@ class Cashier
 {
 	public static function add($data)
 	{
-
+dd($data);
 		$rules["full_name"] 		= "required";
 		$rules["email"] 			= "required|email";
 		$rules["password"] 			= "required";
